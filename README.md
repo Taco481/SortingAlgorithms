@@ -1,6 +1,6 @@
 # Robot Sort Race — 50 algoritmes
 
-`sorting-race-video.html` is één zelfstandig bestand met:
+`index.html` is één zelfstandig bestand met:
 
 - een **zoeklijst van 50 sorteeralgoritmes**;
 - **toevoegen en weghalen** door op een algoritme te klikken;
@@ -13,7 +13,7 @@ Alles werkt offline. Je hebt geen Node, Python of FFmpeg nodig.
 
 ## 1. Snel starten
 
-1. Dubbelklik op `sorting-race-video.html`.
+1. Dubbelklik op `index.html`.
 2. Open het bestand met **Microsoft Edge** of **Google Chrome**.
 3. Kies hierboven je algoritmes (standaard staan de vijf bekendste al aan).
 4. Klik op **▶ Start race** of druk op **Space**.
@@ -176,7 +176,7 @@ Zo blijft de video nooit hangen. Je kunt die grens aanpassen met `MAX_STEPS`.
 
 ## 7. Hoe pas je het aan?
 
-Open `sorting-race-video.html` in een teksteditor (Notepad, VS Code, …). De
+Open `index.html` in een teksteditor (Notepad, VS Code, …). De
 belangrijkste instellingen staan bovenin het `<script>`-blok. Daarna opslaan en de
 pagina verversen.
 
@@ -344,6 +344,27 @@ laat je scrollen. De opname gebruikt altijd de volledige resolutie.
 | Race duurt lang | Zet **Speed** lager (bijv. 120 ms) of kies minder algoritmes |
 | Alles is piepklein | Klik **Weergave: 100%** en scroll, of kies minder algoritmes |
 | Een algoritme lijkt op een ander | Dat klopt: exotische algoritmes zijn vereenvoudigd (zie §6) |
+
+---
+
+## 10. Online zetten (GitHub Pages)
+
+Het bestand heet `index.html`, precies wat GitHub Pages als startpagina verwacht.
+
+1. Ga naar de repo: <https://github.com/Taco481/SortingAlgorithms>.
+2. **Settings → Pages**.
+3. Bij **Build and deployment**: *Source* = **Deploy from a branch**,
+   *Branch* = **main**, map = **/ (root)**.
+4. Klik **Save** en wacht ongeveer een minuut.
+
+Daarna staat de race online op:
+
+```
+https://taco481.github.io/SortingAlgorithms/
+```
+
+Handig voor een link in een verslag of presentatie; de pagina werkt daar precies
+zoals lokaal (opnemen kan ook in de browser).
 
 ---
 
