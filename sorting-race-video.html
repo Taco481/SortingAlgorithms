@@ -1,0 +1,2243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robot Sort Race — 50 Algorithms</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(1200px 600px at 50% -10%, #1a2340 0%, #0b0e18 60%);
+    color: #e8ecff;
+    font-family: "Segoe UI", Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 18px 28px;
+  }
+  h1 { font-size: 19px; font-weight: 600; margin: 0; letter-spacing: .2px; }
+  .bar {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center;
+    background: #141a2c; border: 1px solid #26304d; border-radius: 14px; padding: 10px 14px;
+  }
+  button {
+    font: 600 13px "Segoe UI", Arial, sans-serif;
+    color: #eaf0ff; background: #233052; border: 1px solid #34456e;
+    padding: 8px 14px; border-radius: 9px; cursor: pointer;
+    transition: background .15s, transform .05s, border-color .15s;
+  }
+  button:hover:not(:disabled) { background: #2c3d68; border-color: #4a639b; }
+  button:active:not(:disabled) { transform: translateY(1px); }
+  button:disabled { opacity: .4; cursor: default; }
+  button.primary { background: #2f6bff; border-color: #4f8cff; }
+  button.primary:hover:not(:disabled) { background: #3b78ff; }
+  button.rec { background: #5a1f2a; border-color: #8d3043; }
+  button.rec:hover:not(:disabled) { background: #74283a; }
+  label { font-size: 12px; color: #9aa4c7; display: flex; gap: 7px; align-items: center; }
+  output { color: #dbe4ff; font-variant-numeric: tabular-nums; min-width: 44px; }
+  input[type=range] { width: 96px; accent-color: #4f8cff; }
+  canvas {
+    display: block; max-width: 100%; max-height: 78vh; width: auto; height: auto;
+    border-radius: 14px; background: #0f1220;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, .55), 0 0 0 1px #222b45;
+  }
+  canvas.full-size { max-height: none; }
+  .hint { margin: 0; max-width: 900px; text-align: center; font-size: 12.5px; line-height: 1.6; color: #8a94b8; }
+  .hint b { color: #c7d0ee; font-weight: 600; }
+  #status { color: #a9b6de; }
+  #err {
+    display: none; max-width: 1000px; padding: 10px 14px; border-radius: 10px;
+    background: #4a1620; border: 1px solid #a3314a; color: #ffd7de;
+    font: 12px/1.5 Consolas, monospace; white-space: pre-wrap;
+  }
+  .picker {
+    width: min(100%, 1280px); background: #141a2c; border: 1px solid #26304d;
+    border-radius: 14px; padding: 10px 12px;
+  }
+  .picker-head { display: flex; flex-wrap: wrap; gap: 9px; align-items: center; }
+  #algoSearch {
+    flex: 1 1 280px; min-width: 200px; font: 13px "Segoe UI", Arial, sans-serif;
+    color: #eaf0ff; background: #0f1526; border: 1px solid #34456e;
+    border-radius: 9px; padding: 8px 11px; outline: none;
+  }
+  #algoSearch:focus { border-color: #4f8cff; box-shadow: 0 0 0 2px rgba(79,140,255,.18); }
+  #pickCount { font-size: 12px; color: #9aa4c7; white-space: nowrap; }
+  .algo-list {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+    gap: 6px; max-height: 236px; overflow-y: auto; margin-top: 10px;
+    padding: 1px 4px 1px 1px; scrollbar-color: #34456e #0f1526;
+  }
+  .algo-item {
+    display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+    font: 600 12px "Segoe UI", Arial, sans-serif; color: #b9c3e4;
+    background: #182038; border: 1px solid #26304d; border-radius: 8px;
+    padding: 7px 9px; cursor: pointer;
+  }
+  .algo-item:hover:not(:disabled) { background: #202b48; border-color: #3c5180; }
+  .algo-item.selected { background: #1d3459; border-color: #4f8cff; color: #eef3ff; }
+  .algo-item .dot { flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
+  .algo-item .algo-name { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .algo-item .algo-tag { flex: 0 0 auto; font-size: 9.5px; font-weight: 500; color: #707b9f; }
+  .algo-item .mark { flex: 0 0 auto; width: 14px; text-align: center; font-size: 13px; color: #5d688a; }
+  .algo-item.selected .mark { color: #2ecc71; }
+  .algo-item.active {
+    box-shadow: inset 3px 0 0 #ffd166;
+    border-color: #6e7fa8;
+  }
+  .algo-list.locked { opacity: .72; }
+  .algo-list.locked .algo-item { cursor: default; }
+  .empty-note { grid-column: 1 / -1; padding: 16px; text-align: center; font-size: 12.5px; color: #8a94b8; }
+
+  .algo-info {
+    margin-top: 10px; padding: 12px 14px; border-radius: 10px; min-height: 128px;
+    background: #0f1526; border: 1px solid #26304d;
+  }
+  .info-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .info-head .mini-dot {
+    flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%;
+    background: #3a4568; box-shadow: 0 0 8px currentColor;
+  }
+  .info-head .info-name { font-size: 14px; font-weight: 700; color: #eaf0ff; }
+  .info-tag {
+    font: 500 9.5px "Segoe UI", Arial, sans-serif; color: #8a94b8;
+    border: 1px solid #2c3a5e; border-radius: 99px; padding: 2px 8px;
+  }
+  .info-tag:empty { display: none; }
+  .info-how { margin: 9px 0 10px; font-size: 12.5px; line-height: 1.55; color: #b9c3e4; }
+  .info-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(122px, 1fr)); gap: 8px;
+  }
+  .info-cell { background: #141c31; border: 1px solid #223052; border-radius: 8px; padding: 6px 9px; }
+  .info-cell span {
+    display: block; font-size: 9.5px; letter-spacing: .5px; text-transform: uppercase; color: #6e7899;
+  }
+  .info-cell b {
+    display: block; margin-top: 2px; font: 600 12px Consolas, "Courier New", monospace; color: #dbe3fb;
+  }
+  .info-note { margin: 9px 0 0; font-size: 11.5px; line-height: 1.5; color: #e0b95c; }
+  .info-note:empty { display: none; }
+  .info-hint { margin: 8px 0 0; font-size: 11px; color: #6e7899; }
+</style>
+</head>
+<body>
+
+<h1>🤖 Robot Sort Race — kies je algoritmes</h1>
+
+<section class="picker">
+  <div class="picker-head">
+    <input id="algoSearch" type="search" placeholder="Zoek algoritme… (quick, heap, bogo, radix)" autocomplete="off">
+    <span id="pickCount">0 geselecteerd</span>
+    <button id="addAllBtn" type="button">Alles toevoegen</button>
+    <button id="defaultBtn" type="button">Standaard 5</button>
+    <button id="clearBtn" type="button">Leegmaken</button>
+    <button id="fitBtn" type="button">Weergave: passend</button>
+  </div>
+  <div id="algoList" class="algo-list" role="list" aria-label="Algoritmes"></div>
+
+  <div id="algoInfo" class="algo-info" aria-live="polite">
+    <div class="info-head">
+      <span id="infoDot" class="mini-dot"></span>
+      <span id="infoName" class="info-name">Uitleg</span>
+      <span id="infoTag" class="info-tag"></span>
+    </div>
+    <p id="infoHow" class="info-how">Klik op een algoritme in de lijst om te lezen hoe het werkt.</p>
+    <div class="info-grid">
+      <div class="info-cell"><span>Beste geval</span><b id="infoBest">–</b></div>
+      <div class="info-cell"><span>Gemiddeld</span><b id="infoAvg">–</b></div>
+      <div class="info-cell"><span>Slechtste geval</span><b id="infoWorst">–</b></div>
+      <div class="info-cell"><span>Extra ruimte</span><b id="infoSpace">–</b></div>
+    </div>
+    <p id="infoNote" class="info-note"></p>
+    <p id="infoHint" class="info-hint">Dezelfde klik voegt het algoritme toe of haalt het weg.</p>
+  </div>
+</section>
+
+<div class="bar">
+  <button id="startBtn" class="primary">▶ Start race</button>
+  <button id="pauseBtn" disabled>⏸ Pause</button>
+  <button id="recordBtn" class="rec">⏺ Record video</button>
+  <button id="resetBtn">↺ Reset</button>
+  <label>Speed <input id="speed" type="range" min="60" max="1200" step="20" value="500"><output id="speedOut">500 ms</output></label>
+  <label>Items <input id="size" type="range" min="5" max="12" step="1" value="8"><output id="sizeOut">8</output></label>
+</div>
+
+<canvas id="stage" width="1280" height="720"></canvas>
+
+<p class="hint">
+  <b>Kies je race:</b> zoek hierboven en klik op een algoritme om het toe te voegen of weg te halen. Het canvas wordt automatisch zo hoog als nodig.
+  <br><b>Slow motion:</b> balls glide to their new spot — drag <b>Speed</b> to make every move slower.
+  <br><b>Record:</b> click “Record video”, keep this tab visible, and wait for the winner screen — the file downloads automatically (MP4 if your browser supports it, otherwise WebM).
+  <br><span id="status">Ready. Press Start or hit Space.</span>
+</p>
+
+<div id="err"></div>
+
+<script>
+"use strict";
+
+/* =========================================================================
+   ROBOT SORT RACE — 5 algorithms on the same array
+   Everything is drawn on the canvas, so canvas.captureStream() records a
+   complete video (title, countdown, race, results) without extra tools.
+   ========================================================================= */
+
+const canvas = document.getElementById("stage");
+const ctx = canvas.getContext("2d");
+const W = canvas.width;
+let H = canvas.height;
+
+// ---------------------------------------------------------------- settings
+function hslToHex(h, s, l) {
+  s /= 100; l /= 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+  let r = 0, g = 0, b = 0;
+  if (h < 60) [r, g, b] = [c, x, 0];
+  else if (h < 120) [r, g, b] = [x, c, 0];
+  else if (h < 180) [r, g, b] = [0, c, x];
+  else if (h < 240) [r, g, b] = [0, x, c];
+  else if (h < 300) [r, g, b] = [x, 0, c];
+  else [r, g, b] = [c, 0, x];
+  const to = (v) => Math.round((v + m) * 255).toString(16).padStart(2, "0");
+  return `#${to(r)}${to(g)}${to(b)}`;
+}
+
+// All 50 algorithms from the list. `impl` is the generator that animates it.
+// A few exotic ones are simplified versions of a related core algorithm.
+const ALGO_LIBRARY = [
+  { key: "bubble",        name: "Bubble Sort",             tag: "Exchange",     blurb: "swap neighbours",      impl: bubbleSort },
+  { key: "selection",     name: "Selection Sort",          tag: "Selection",    blurb: "pick the minimum",     impl: selectionSort },
+  { key: "insertion",     name: "Insertion Sort",          tag: "Insertion",    blurb: "slide into place",     impl: insertionSort },
+  { key: "merge",         name: "Merge Sort",              tag: "Merge",        blurb: "split · merge",        impl: mergeSort },
+  { key: "quick",         name: "Quick Sort",              tag: "Partition",    blurb: "partition · pivot",    impl: quickSort },
+  { key: "heap",          name: "Heap Sort",               tag: "Heap",         blurb: "binary heap",          impl: heapSort },
+  { key: "shell",         name: "Shell Sort",              tag: "Insertion",    blurb: "shrinking gaps",       impl: shellSort },
+  { key: "counting",      name: "Counting Sort",           tag: "Distribution", blurb: "count values",         impl: countingSort },
+  { key: "radix",         name: "Radix Sort",              tag: "Distribution", blurb: "digit buckets",        impl: radixSort },
+  { key: "bucket",        name: "Bucket Sort",             tag: "Distribution", blurb: "value ranges",         impl: bucketSort },
+  { key: "tim",           name: "Tim Sort",                tag: "Hybrid",       blurb: "runs + merge",         impl: timSort },
+  { key: "intro",         name: "IntroSort",               tag: "Hybrid",       blurb: "quick + heap",         impl: introSort },
+  { key: "tree",          name: "Tree Sort",               tag: "Tree",         blurb: "binary search tree",   impl: treeSort },
+  { key: "cocktail",      name: "Cocktail Shaker Sort",    tag: "Exchange",     blurb: "both directions",      impl: cocktailSort },
+  { key: "comb",          name: "Comb Sort",               tag: "Exchange",     blurb: "shrinking gap",        impl: combSort },
+  { key: "gnome",         name: "Gnome Sort",              tag: "Exchange",     blurb: "walk back",            impl: gnomeSort },
+  { key: "oddEven",       name: "Odd-Even Sort",           tag: "Exchange",     blurb: "odd/even pairs",       impl: oddEvenSort },
+  { key: "strand",        name: "Strand Sort",             tag: "Insertion",    blurb: "rising strands",       impl: strandSort },
+  { key: "smooth",        name: "Smoothsort",              tag: "Heap",         blurb: "heap variant",         impl: smoothSort },
+  { key: "library",       name: "Library Sort",            tag: "Insertion",    blurb: "gapped insert",        impl: librarySort },
+  { key: "patience",      name: "Patience Sort",           tag: "Insertion",    blurb: "card piles",           impl: patienceSort },
+  { key: "pigeonhole",    name: "Pigeonhole Sort",         tag: "Distribution", blurb: "pigeon holes",         impl: pigeonholeSort },
+  { key: "flash",         name: "Flash Sort",              tag: "Distribution", blurb: "classify + place",     impl: flashSort },
+  { key: "americanFlag",  name: "American Flag Sort",      tag: "Distribution", blurb: "MSD radix",            impl: americanFlagSort },
+  { key: "bitonic",       name: "Bitonic Sort",            tag: "Network",      blurb: "sorting network",      impl: bitonicSort },
+  { key: "oddEvenMerge",  name: "Odd-Even Merge Sort",     tag: "Network",      blurb: "merge network",        impl: oddEvenMergeSort },
+  { key: "sample",        name: "Sample Sort",             tag: "Partition",    blurb: "sampled pivots",       impl: sampleSort },
+  { key: "parallelMerge", name: "Parallel Merge Sort",     tag: "Merge",        blurb: "merge (parallel)",     impl: parallelMergeSort },
+  { key: "parallelQuick", name: "Parallel Quick Sort",     tag: "Partition",    blurb: "quick (parallel)",     impl: parallelQuickSort },
+  { key: "network",       name: "Sorting Network Sort",    tag: "Network",      blurb: "comparator grid",      impl: networkSort },
+  { key: "boseNelson",    name: "Bose-Nelson Sort",        tag: "Network",      blurb: "network pairs",        impl: boseNelsonSort },
+  { key: "pancake",       name: "Pancake Sort",            tag: "Exchange",     blurb: "flip prefixes",        impl: pancakeSort },
+  { key: "cycle",         name: "Cycle Sort",              tag: "Selection",    blurb: "cycle leaders",        impl: cycleSort },
+  { key: "tournament",    name: "Tournament Sort",         tag: "Selection",    blurb: "knock-out tree",       impl: tournamentSort },
+  { key: "weakHeap",      name: "Weak Heap Sort",          tag: "Heap",         blurb: "weak heap",            impl: weakHeapSort },
+  { key: "cartesianTree", name: "Cartesian Tree Sort",     tag: "Tree",         blurb: "cartesian tree",       impl: cartesianTreeSort },
+  { key: "burstsort",     name: "Burstsort",               tag: "Distribution", blurb: "burst + radix",        impl: burstsort },
+  { key: "grail",         name: "GrailSort",               tag: "Merge",        blurb: "block merge",          impl: grailSort },
+  { key: "wiki",          name: "WikiSort",                tag: "Merge",        blurb: "block merge",          impl: wikiSort },
+  { key: "dualPivot",     name: "Dual-Pivot Quick Sort",   tag: "Partition",    blurb: "two pivots",           impl: dualPivotSort },
+  { key: "externalMerge", name: "External Merge Sort",     tag: "Merge",        blurb: "external runs",        impl: externalMergeSort },
+  { key: "polyphaseMerge",name: "Polyphase Merge Sort",    tag: "Merge",        blurb: "polyphase runs",       impl: polyphaseMergeSort },
+  { key: "replacement",   name: "Replacement Selection Sort", tag: "Selection", blurb: "run selection",        impl: replacementSort },
+  { key: "bogo",          name: "Bogo Sort",               tag: "Fun",          blurb: "random shuffle",       impl: bogoSort },
+  { key: "bozo",          name: "Bozo Sort",               tag: "Fun",          blurb: "random swaps",         impl: bozoSort },
+  { key: "stooge",        name: "Stooge Sort",             tag: "Fun",          blurb: "recursive thirds",     impl: stoogeSort },
+  { key: "slow",          name: "Slow Sort",               tag: "Fun",          blurb: "slow sort",            impl: slowSort },
+  { key: "sleep",         name: "Sleep Sort",              tag: "Fun",          blurb: "wake in order",        impl: sleepSort },
+  { key: "bead",          name: "Bead Sort (Gravity Sort)", tag: "Special",     blurb: "gravity columns",      impl: beadSort },
+  { key: "spaghetti",     name: "Spaghetti Sort",          tag: "Special",      blurb: "pick longest",         impl: spaghettiSort },
+].map((algo, index) => ({
+  ...algo,
+  color: hslToHex((index * 137.508) % 360, 72, 62),
+}));
+
+// ------------------------------------------------------------------ uitleg
+// Per algoritme: hoe het werkt + de klassieke complexiteiten.
+// `note` verschijnt alleen als de animatie een vereenvoudigde variant is.
+const ALGO_INFO = {
+  bubble: {
+    how: "Het algoritme loopt steeds langs de lijst en vergelijkt elk paar buren. Staat het linker getal groter dan het rechter, dan wisselen ze. Na één ronde staat het grootste getal helemaal rechts. Dat herhaalt zich tot er niets meer te wisselen valt; de grootste getallen bubbelen als het ware naar achteren.",
+    best: "O(n)", avg: "O(n²)", worst: "O(n²)", space: "O(1)",
+    note: "Stabiel: gelijke getallen houden hun volgorde. Met de vlag 'al iets gewisseld?' stopt hij vroeg bij een bijna gesorteerde lijst.",
+  },
+  selection: {
+    how: "Zoek in het ongesorteerde deel steeds het kleinste getal en zet dat vooraan. Daarna schuift de grens één plek op en doe je hetzelfde met de rest. Er wordt maar één keer per ronde gewisseld, ook al zijn er veel vergelijkingen nodig.",
+    best: "O(n²)", avg: "O(n²)", worst: "O(n²)", space: "O(1)",
+    note: "Doet altijd evenveel vergelijkingen, ook als de lijst al gesorteerd is. Niet stabiel.",
+  },
+  insertion: {
+    how: "Je houdt een gesorteerd linkerstuk bij. Pak het volgende getal en schuif het naar links tot het op de juiste plek staat, net als kaarten in je hand sorteren. Elk nieuw getal wordt met de al gesorteerde getallen vergeleken en ingevoegd.",
+    best: "O(n)", avg: "O(n²)", worst: "O(n²)", space: "O(1)",
+    note: "Zeer snel voor kleine of bijna gesorteerde lijsten. Stabiel.",
+  },
+  merge: {
+    how: "Deel de lijst steeds in twee helften tot elk stukje één getal is. Voeg daarna telkens twee gesorteerde stukken samen: kijk naar de kop van beide stukken, neem de kleinste, en ga verder. Zo ontstaan steeds grotere gesorteerde stukken.",
+    best: "O(n log n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(n)",
+    note: "Stabiel en voorspelbaar, maar heeft een hulplijst nodig. In deze animatie gebeurt samenvoegen met schuifbewegingen.",
+  },
+  quick: {
+    how: "Kies één getal als pivot (hier het laatste). Zet alles wat kleiner is naar links en alles wat groter is naar rechts. De pivot staat dan definitief goed. Hetzelfde doe je daarna met de linker- en rechterkant, steeds kleiner tot alles op zijn plek staat.",
+    best: "O(n log n)", avg: "O(n log n)", worst: "O(n²)", space: "O(log n)",
+    note: "Meestal de snelste in de praktijk, maar een slechte pivot (zoals een al gesorteerde lijst) geeft O(n²).",
+  },
+  heap: {
+    how: "Bouw eerst een max-heap: een boom waarin elk getal groter is dan zijn kinderen. Het grootste getal staat dus bovenaan. Wissel dat naar het einde, verklein de heap en herstel de heap-eigenschap. Zo haal je steeds het maximum eruit en zet je het achteraan.",
+    best: "O(n log n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(1)",
+    note: "Sorteert in-place, zonder hulplijst. Niet stabiel.",
+  },
+  shell: {
+    how: "Een verbeterde insertion sort. Eerst vergelijk en wissel je getallen die ver uit elkaar staan (grote gap), daarna halveer je de gap steeds. Grote verplaatsingen gebeuren zo in weinig stappen; pas op het einde met gap 1 is het bijna insertion sort op een bijna gesorteerde lijst.",
+    best: "O(n log n)", avg: "≈ O(n^1.3)", worst: "O(n²)", space: "O(1)",
+    note: "De echte snelheid hangt sterk af van de gekozen gap-reeks (hier halveren).",
+  },
+  counting: {
+    how: "Geen vergelijkingen: tel eerst hoe vaak elke waarde voorkomt. Daarna schrijf je de waarden in oplopende volgorde terug, net zo vaak als geteld. Geschikt als de waarden in een klein, bekend bereik liggen.",
+    best: "O(n + k)", avg: "O(n + k)", worst: "O(n + k)", space: "O(k)",
+    note: "k = het grootste getal. Niet vergelijkend, dus de O(n log n)-grens geldt hier niet. Stabiel.",
+  },
+  radix: {
+    how: "Sorteer de getallen cijfer voor cijfer, van het minst belangrijke cijfer naar het meest belangrijke. Verdeel ze elke ronde over tien emmers (0–9) en verzamel die in volgorde. Na de laatste ronde staat alles gesorteerd.",
+    best: "O(d·(n + 10))", avg: "O(d·(n + 10))", worst: "O(d·(n + 10))", space: "O(n + 10)",
+    note: "d = aantal cijfers. Ook niet vergelijkend. Stabiel, mits de emmers in volgorde worden geleegd.",
+  },
+  bucket: {
+    how: "Verdeel de getallen over een aantal emmers op basis van hun waarde (bijvoorbeeld kleine, middelhoge en grote getallen). Sorteer elke emmer apart en plak de emmers daarna aan elkaar. Bij een gelijkmatige verdeling is dat snel.",
+    best: "O(n + k)", avg: "O(n + k)", worst: "O(n²)", space: "O(n + k)",
+    note: "Alles in één emmer belanden is het slechtste geval: dan moet die ene emmer alles sorteren.",
+  },
+  tim: {
+    how: "Een hybride: zoek korte stukken die al bijna oplopend zijn (runs) en sorteer die met insertion sort. Voeg de runs daarna met merge sort samen, steeds twee aan twee. Dit is wat Python en Java standaard gebruiken.",
+    best: "O(n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(n)",
+    note: "Profiteert enorm van bestaande orde. Stabiel.",
+  },
+  intro: {
+    how: "Begin als quick sort, maar houd de recursiediepte in de gaten. Wordt die te groot (dreigend O(n²)), dan schakelt hij over op heap sort. Kleine stukjes doet hij met insertion sort. Zo blijft de slechtste tijd gegarandeerd O(n log n).",
+    best: "O(n log n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(log n)",
+    note: "Vereenvoudigde weergave: in deze race zie je het gedrag van quick sort.",
+  },
+  tree: {
+    how: "Voeg elk getal toe aan een binaire zoekboom: kleiner gaat naar links, groter naar rechts. Lees de boom daarna in-order uit (links, knoop, rechts). Omdat de boom gesorteerd is, komt de lijst er dan op volgorde uit.",
+    best: "O(n log n)", avg: "O(n log n)", worst: "O(n²)", space: "O(n)",
+    note: "Als de invoer al gesorteerd is, wordt de boom een lange sliert en zakt hij naar O(n²).",
+  },
+  cocktail: {
+    how: "Bubble sort die heen én terug gaat. Eerst bubbelt het grootste getal naar rechts, daarna bubbelt de terugweg het kleinste naar links. Dat heen-en-weer herhaalt zich, waardoor het zoeken aan beide kanten krimpt.",
+    best: "O(n)", avg: "O(n²)", worst: "O(n²)", space: "O(1)",
+    note: "Ook wel shaker sort genoemd. Iets sneller dan bubble sort bij veel omgekeerde paren.",
+  },
+  comb: {
+    how: "Bubble sort met een grote sprong: vergelijk eerst getallen die ver uit elkaar staan en verklein de sprong elke ronde met factor 1,3. Kleine getallen achteraan schieten zo snel naar voren. Pas op het einde vergelijk je echte buren.",
+    best: "O(n log n)", avg: "≈ O(n²/2^p)", worst: "O(n²)", space: "O(1)",
+    note: "In de praktijk vaak veel sneller dan bubble sort. Niet stabiel.",
+  },
+  gnome: {
+    how: "Een klein mannetje (gnome) loopt door de lijst. Staan twee buren goed, dan stapt hij vooruit. Staan ze verkeerd, dan wisselt hij en stapt hij één terug om te controleren of het daarvoor nu wel klopt. Zo wandelt hij net zo lang tot hij helemaal achteraan is.",
+    best: "O(n)", avg: "O(n²)", worst: "O(n²)", space: "O(1)",
+    note: "Simpel en stabiel, maar veel wisselingen bij een omgekeerde lijst.",
+  },
+  oddEven: {
+    how: "Vergelijk om de beurt alleen de oneven paren (1-2, 3-4, …) en daarna alleen de even paren (2-3, 4-5, …). Elke ronde schuift het grootste getal weer een plek op. Dit patroon is heel geschikt om parallel uit te voeren.",
+    best: "O(n)", avg: "O(n²)", worst: "O(n²)", space: "O(1)",
+    note: "Brick sort. Stabiel en eenvoudig te parallelliseren.",
+  },
+  strand: {
+    how: "Haal steeds een stijgende reeks (een 'strand') uit de nog ongesorteerde getallen. Voeg dat strand daarna samen met wat al gesorteerd is. Je herhaalt dit tot de invoer leeg is.",
+    best: "O(n)", avg: "O(n²)", worst: "O(n²)", space: "O(n)",
+    note: "Vereenvoudigde weergave: in deze race zie je insertion sort, die dezelfde 'invoegen in een gesorteerd deel'-gedachte deelt.",
+  },
+  smooth: {
+    how: "Een slimme heap-variant die werkt met Leonardo-getallen in plaats van een perfecte boom. Bij een bijna gesorteerde lijst is hij bijna lineair, en hij sorteert in-place. Het is de favoriete sorteermethode van zijn bedenker Dijkstra.",
+    best: "O(n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(1)",
+    note: "Vereenvoudigde weergave: in deze race zie je heap sort.",
+  },
+  library: {
+    how: "Insertion sort met expres gaten in de lijst (gapped insertion). Nieuwe getallen glijden in een gat, zodat er minder geschoven hoeft te worden. Af en toe wordt de lijst opnieuw verdeeld om de gaten gelijkmatig te houden.",
+    best: "O(n log n)", avg: "O(n log n)", worst: "O(n²)", space: "O(n)",
+    note: "Vereenvoudigde weergave: in deze race zie je insertion sort.",
+  },
+  patience: {
+    how: "Net als patience met kaarten: leg elk getal op de linkerstapel waar het bovenop past, of begin een nieuwe stapel. Daarna voeg je de stapels samen. Het aantal stapels is precies de lengte van de langste stijgende deelreeks.",
+    best: "O(n log n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(n)",
+    note: "Vereenvoudigde weergave: in deze race zie je insertion sort.",
+  },
+  pigeonhole: {
+    how: "Maak één hokje voor elke mogelijke waarde. Loop de lijst door en stop elk getal in zijn eigen hokje. Lees de hokjes daarna van klein naar groot uit: klaar. Het is in feite counting sort met de hokjes als tussenstap.",
+    best: "O(n + k)", avg: "O(n + k)", worst: "O(n + k)", space: "O(k)",
+    note: "Vereenvoudigde weergave: in deze race zie je counting sort.",
+  },
+  flash: {
+    how: "Bereken eerst met een formule in welke klasse elk getal valt, en verplaats de grote getallen meteen naar achteren. Sorteer daarna elke klasse met insertion sort. Het voorwerk maakt de klassen zo klein dat het sorteren snel gaat.",
+    best: "O(n)", avg: "O(n)", worst: "O(n²)", space: "O(n)",
+    note: "Vereenvoudigde weergave: in deze race zie je bucket sort.",
+  },
+  americanFlag: {
+    how: "Een radix sort die van het belangrijkste cijfer begint (MSD). Verdeel de getallen in-place over emmers, zoals de strepen van de Amerikaanse vlag, en sorteer elke emmer daarna verder met het volgende cijfer.",
+    best: "O(n·d)", avg: "O(n·d)", worst: "O(n·d)", space: "O(1)",
+    note: "Vereenvoudigde weergave: in deze race zie je radix sort.",
+  },
+  bitonic: {
+    how: "Een sorteernetwerk: bouw eerst bitonische reeksen (eerst omhoog, dan omlaag) en voeg die samen met vaste comparator-paren. Welke paren je vergelijkt ligt van tevoren vast, dus de invoer maakt niet uit. Ideaal voor hardware en GPU's.",
+    best: "O(n log² n)", avg: "O(n log² n)", worst: "O(n log² n)", space: "O(1)",
+    note: "Het netwerk werkt op een macht van 2. Bij een ander aantal items valt de animatie terug op odd-even sort.",
+  },
+  oddEvenMerge: {
+    how: "Een samenvoeg-netwerk van Batcher: twee gesorteerde helften worden met een vast patroon van comparator-paren samengevoegd tot één gesorteerde lijst. Ook dit is invoer-onafhankelijk en dus goed parallel te doen.",
+    best: "O(n log² n)", avg: "O(n log² n)", worst: "O(n log² n)", space: "O(1)",
+    note: "Vereenvoudigde weergave: in deze race zie je odd-even sort.",
+  },
+  sample: {
+    how: "Neem een willekeurige steekproef uit de lijst en gebruik die als scheidingswaarden (pivots). Verdeel alle getallen over de vakken tussen die pivots. Sorteer elk vak apart. Met genoeg vakken zijn die vakken klein en dus snel klaar.",
+    best: "O(n log n)", avg: "O(n log n)", worst: "O(n²)", space: "O(n)",
+    note: "Vereenvoudigde weergave: in deze race zie je quick sort.",
+  },
+  parallelMerge: {
+    how: "Merge sort waarbij de twee helften onafhankelijk van elkaar gesorteerd kunnen worden en het samenvoegen ook parallel kan. Op meerdere cores verdeel je het werk, waardoor de totale tijd flink daalt.",
+    best: "O(n log n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(n)",
+    note: "Vereenvoudigde weergave: in deze race zie je merge sort (één step per beurt).",
+  },
+  parallelQuick: {
+    how: "Quick sort waarbij de linker- en rechterpartitie tegelijk door verschillende cores worden aangepakt. De partitionering zelf blijft het lastige deel; daarna is het werk mooi te verdelen.",
+    best: "O(n log n)", avg: "O(n log n)", worst: "O(n²)", space: "O(log n)",
+    note: "Vereenvoudigde weergave: in deze race zie je quick sort.",
+  },
+  network: {
+    how: "Een sorteernetwerk bestaat uit een vaste set comparator-paren. Elk paar vergelijkt twee posities en wisselt ze zo nodig. Na alle lagen staat de lijst gegarandeerd gesorteerd, ongeacht de invoer.",
+    best: "O(n log² n)", avg: "O(n log² n)", worst: "O(n log² n)", space: "O(1)",
+    note: "Vereenvoudigde weergave: in deze race zie je odd-even sort.",
+  },
+  boseNelson: {
+    how: "Een sorteernetwerk volgens de Bose–Nelson-constructie, met zo weinig comparatoren als nodig. De comparatoren worden recursief opgebouwd en hebben een vaste volgorde, dus ook dit netwerk werkt voor elke invoer.",
+    best: "O(n log n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(1)",
+    note: "Vereenvoudigde weergave: in deze race zie je odd-even sort.",
+  },
+  pancake: {
+    how: "Je mag alleen een voorvoegsel omdraaien (flip), zoals een stapel pannenkoeken. Zoek het grootste getal, flip het naar de bovenkant en flip daarna de hele stapel zodat het onderaan komt. Herhaal dat voor de rest.",
+    best: "O(n)", avg: "O(n²)", worst: "O(n²)", space: "O(1)",
+    note: "Er zijn hoogstens 2n − 3 flips nodig. Elke flip is hier een reeks swaps.",
+  },
+  cycle: {
+    how: "Zet elk getal in één keer op zijn definitieve plek en volg de cyclus die daardoor ontstaat. Je schrijft dus zo weinig mogelijk: elk getal wordt maximaal één keer verplaatst. Het aantal vergelijkingen blijft wel kwadratisch.",
+    best: "O(n²)", avg: "O(n²)", worst: "O(n²)", space: "O(1)",
+    note: "Vereenvoudigde weergave: in deze race zie je selection sort.",
+  },
+  tournament: {
+    how: "Laat alle getallen een knock-outtoernooi spelen: het kleinste wint en gaat door. De winnaar is het minimum. Vervang daarna de winnaar en werk alleen het pad naar de top bij. Zo vind je elk volgend minimum snel.",
+    best: "O(n log n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(n)",
+    note: "Vereenvoudigde weergave: in deze race zie je selection sort.",
+  },
+  weakHeap: {
+    how: "Een heap met minder strikte regels (een zwakke heap). Daardoor zijn er minder verwisselingen nodig bij het opbouwen en herstellen. Het resultaat is nog steeds een volledig gesorteerde lijst, in-place.",
+    best: "O(n log n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(1)",
+    note: "Vereenvoudigde weergave: in deze race zie je heap sort.",
+  },
+  cartesianTree: {
+    how: "Bouw een cartesiaanse boom: de wortel is het kleinste getal, en links/rechts staan de stukken die daarvoor/daarna komen. Lees de boom in-order uit en je krijgt de gesorteerde lijst. De boom heeft zowel heap- als zoekboom-eigenschappen.",
+    best: "O(n)", avg: "O(n log n)", worst: "O(n²)", space: "O(n)",
+    note: "Vereenvoudigde weergave: in deze race zie je tree sort.",
+  },
+  burstsort: {
+    how: "Ontwikkeld voor heel veel strings: verdeel ze eerst in een groot aantal buckets op basis van de eerste tekens, en sorteert elke bucket daarna lokaal (liefst in het cachegeheugen). Hier zie je hetzelfde idee met cijfers.",
+    best: "O(n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(n)",
+    note: "Vereenvoudigde weergave: in deze race zie je radix sort.",
+  },
+  grail: {
+    how: "Een in-place merge sort die werkt met blokken en een kleine buffer. Door blokken slim te verwisselen heeft hij bijna geen extra geheugen nodig, terwijl hij toch O(n log n) blijft.",
+    best: "O(n log n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(1)",
+    note: "Vereenvoudigde weergave: in deze race zie je merge sort.",
+  },
+  wiki: {
+    how: "WikiSort is een in-place merge sort met een kleine hulpbuffer. Hij deelt de lijst in blokken, sorteert die en voegt ze samen met speciale rotaties, zonder grote hulplijst.",
+    best: "O(n log n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(1)",
+    note: "Vereenvoudigde weergave: in deze race zie je merge sort.",
+  },
+  dualPivot: {
+    how: "Quick sort met twee pivots in plaats van één. De lijst wordt in drie stukken verdeeld: kleiner dan pivot 1, tussen beide pivots, en groter dan pivot 2. Daarna worden de drie stukken apart gesorteerd.",
+    best: "O(n log n)", avg: "O(n log n)", worst: "O(n²)", space: "O(log n)",
+    note: "Vereenvoudigde weergave: in deze race zie je quick sort.",
+  },
+  externalMerge: {
+    how: "Voor data die niet in het geheugen past: lees stukken in, sorteer ze en schrijf ze als gesorteerde runs terug naar schijf. Voeg daarna de runs samen tot één groot gesorteerd bestand.",
+    best: "O(n log n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(1) per run",
+    note: "Vereenvoudigde weergave: in deze race zie je merge sort.",
+  },
+  polyphaseMerge: {
+    how: "Een external merge die zo weinig mogelijk schijven of tapes gebruikt. Door de runs ongelijk over de tapes te verdelen, kun je steeds blijven samenvoegen zonder alle data opnieuw te kopiëren.",
+    best: "O(n log n)", avg: "O(n log n)", worst: "O(n log n)", space: "O(1) per run",
+    note: "Vereenvoudigde weergave: in deze race zie je merge sort.",
+  },
+  replacement: {
+    how: "Bouw gesorteerde runs terwijl je door de data loopt. Met een kleine heap houd je de kleinste kandidaten bij; alles wat groter is dan het laatst weggeschreven getal gaat mee in de huidige run, de rest in de volgende. Zo worden de runs gemiddeld twee keer zo lang.",
+    best: "O(n log k)", avg: "O(n log k)", worst: "O(n log k)", space: "O(k)",
+    note: "Vereenvoudigde weergave: in deze race zie je selection sort.",
+  },
+  bogo: {
+    how: "Schud de lijst willekeurig door elkaar en kijk of hij toevallig gesorteerd is. Zo niet, dan opnieuw. De kans op succes is zo klein dat dit vooral een grap is: bij 8 getallen is er ongeveer 1 op 40.320 kans per poging.",
+    best: "O(n)", avg: "O(n · n!)", worst: "onbegrensd", space: "O(1)",
+    note: "Na 220 stappen grijpt het vangnet in en maakt de robot de race af met selection sort, zodat de video altijd eindigt.",
+  },
+  bozo: {
+    how: "Kies twee willekeurige getallen en wissel ze. Kijk daarna of de lijst gesorteerd is. Zo niet, dan weer twee willekeurige getallen. Nog hopelozer dan bogo sort, want de meeste swaps helpen niets.",
+    best: "O(n)", avg: "O(n² · n!)", worst: "onbegrensd", space: "O(1)",
+    note: "Ook hier neemt het vangnet na 220 stappen over met selection sort.",
+  },
+  stooge: {
+    how: "Een bewust trage recursie: vergelijk het eerste en laatste getal en wissel ze zo nodig. Sorteer daarna recursief de eerste twee derde, dan de laatste twee derde, en dan nog eens de eerste twee derde. Elke laag doet bijna drie keer zoveel werk.",
+    best: "O(n^2.71)", avg: "O(n^2.71)", worst: "O(n^2.71)", space: "O(log n)",
+    note: "Het vangnet maakt de race na 220 stappen af met selection sort.",
+  },
+  slow: {
+    how: "Sorteer eerst beide helften recursief. Zet daarna het grootste van de twee helften achteraan en herhaal het hele proces op de rest. De recurrente betrekking T(n) = 2T(n/2) + T(n−1) maakt dit superpolynomiaal traag.",
+    best: "O(n log n)", avg: "superpolynomiaal", worst: "superpolynomiaal", space: "O(n)",
+    note: "Het vangnet maakt de race na 220 stappen af met selection sort.",
+  },
+  sleep: {
+    how: "Elk getal krijgt een timer die even lang duurt als zijn waarde. Het kleinste getal wordt dus als eerste wakker, daarna het volgende. Ze verschijnen in slaapvolgorde in de uitvoer. Leuk op een oud mainframe, onbruikbaar in het echt.",
+    best: "O(n)", avg: "O(max · n)", worst: "O(max · n)", space: "O(n)",
+    note: "Vereenvoudigde weergave: in deze race zie je selection sort; echte timers zouden de race onvoorspelbaar maken.",
+  },
+  bead: {
+    how: "Bead sort (gravity sort): teken de getallen als kralen op stokjes. Laat de kralen daarna door de zwaartekracht naar beneden vallen. De kolommen die ontstaan zijn van boven naar beneden de gesorteerde getallen. In deze race gebeurt dat als 'pak steeds het zwaarste en zet het achteraan'.",
+    best: "O(n)", avg: "O(n · max)", worst: "O(n · max)", space: "O(n · max)",
+    note: "De echte gravity-versie heeft een rooster van n × max nodig; de animatie gebruikt een selectieachtige benadering.",
+  },
+  spaghetti: {
+    how: "Steek alle spaghettistokjes rechtop in je hand, met de lengte als waarde. Pak steeds het langste stokje eruit en leg het neer. Zo komen ze van lang naar kort (of omgekeerd) in de rij. Een grappige maar echte sorteermethode.",
+    best: "O(n)", avg: "O(n)", worst: "O(n)", space: "O(n)",
+    note: "Vereenvoudigde weergave: in deze race zie je selection sort, die ook steeds het uiterste pakt.",
+  },
+};
+
+const DEFAULT_KEYS = ["bubble", "selection", "insertion", "merge", "quick"];
+let selectedKeys = new Set(DEFAULT_KEYS);
+
+const BALL_X0 = 190;
+const BALL_X1 = 860;
+let LANE_TOP = 104;
+let LANE_H = 108;
+let LANE_GAP = 4;
+let FOOTER_Y = 686;
+
+// ------------------------------------------------------------------- state
+let robots = [];
+let phase = "idle";          // idle | countdown | running | paused | done
+let speed = 500;             // ms per step (one step = one visual operation)
+let itemCount = 8;
+let countdownStart = 0;
+let countdownEnd = 0;
+let doneAt = 0;
+let ranking = [];
+let raceElapsed = 0;         // race clock in ms (pauses are excluded)
+
+let isRecording = false;
+let recorder = null;
+let chunks = [];
+let stopTimer = null;
+let recordedMime = "";
+let lastDownloadLink = null;
+
+// ------------------------------------------------------------------ helpers
+function alpha(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, r);
+}
+
+function fmtTime(ms) {
+  const total = Math.max(0, ms) / 1000;
+  if (total < 60) return `${total.toFixed(1)} s`;
+  const minutes = Math.floor(total / 60);
+  const seconds = total - minutes * 60;
+  return `${minutes}:${seconds.toFixed(1).padStart(4, "0")}`;
+}
+
+function shuffled(n) {
+  const a = Array.from({ length: n }, (_, i) => i + 1);
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// =========================================================================
+// Sorting generators
+// Each generator mutates its array and yields one visual operation:
+//   { type:"compare", i, j, range?, pivot? }
+//   { type:"swap",    i, j, range?, pivot? }
+//   { type:"rotate",  from, to, range? }   (merge: slide one ball into place)
+// One yield = one tick for that robot.
+// =========================================================================
+
+function* bubbleSort(a) {
+  const n = a.length;
+  for (let i = 0; i < n - 1; i++) {
+    let swapped = false;
+    for (let j = 0; j < n - 1 - i; j++) {
+      yield { type: "compare", i: j, j: j + 1 };
+      if (a[j] > a[j + 1]) {
+        [a[j], a[j + 1]] = [a[j + 1], a[j]];
+        yield { type: "swap", i: j, j: j + 1 };
+        swapped = true;
+      }
+    }
+    if (!swapped) return;
+  }
+}
+
+function* insertionSort(a) {
+  for (let i = 1; i < a.length; i++) {
+    let j = i;
+    while (j > 0) {
+      yield { type: "compare", i: j - 1, j };
+      if (a[j - 1] > a[j]) {
+        [a[j - 1], a[j]] = [a[j], a[j - 1]];
+        yield { type: "swap", i: j - 1, j };
+        j--;
+      } else {
+        break;
+      }
+    }
+  }
+}
+
+function* selectionSort(a) {
+  for (let i = 0; i < a.length - 1; i++) {
+    let min = i;
+    for (let j = i + 1; j < a.length; j++) {
+      yield { type: "compare", i: j, j: min };
+      if (a[j] < a[min]) min = j;
+    }
+    if (min !== i) {
+      [a[i], a[min]] = [a[min], a[i]];
+      yield { type: "swap", i, j: min };
+    }
+  }
+}
+
+function* mergeSort(a) {
+  yield* msort(a, 0, a.length - 1);
+}
+
+function* msort(a, lo, hi) {
+  if (lo >= hi) return;
+  const mid = (lo + hi) >> 1;
+  yield* msort(a, lo, mid);
+  yield* msort(a, mid + 1, hi);
+  yield* merge(a, lo, mid, hi);
+}
+
+function* merge(a, lo, mid, hi) {
+  let i = lo;
+  let j = mid + 1;
+
+  // Stable in-place merge: when the right head belongs before the left head,
+  // rotate it into place. One rotation = one visible move (several balls slide).
+  while (i <= mid && j <= hi) {
+    yield { type: "compare", i, j, range: [lo, hi] };
+    if (a[i] <= a[j]) {
+      i++;
+    } else {
+      const moved = a[j];
+      for (let k = j; k > i; k--) a[k] = a[k - 1];
+      a[i] = moved;
+      yield { type: "rotate", from: j, to: i, range: [lo, hi] };
+      i++;
+      mid++;
+      j++;
+    }
+  }
+}
+
+function* quickSort(a) {
+  yield* qsort(a, 0, a.length - 1);
+}
+
+function* qsort(a, lo, hi) {
+  if (lo >= hi) return;
+  const p = yield* partition(a, lo, hi);
+  yield* qsort(a, lo, p - 1);
+  yield* qsort(a, p + 1, hi);
+}
+
+function* partition(a, lo, hi) {
+  const pivot = a[hi];
+  let i = lo;
+  for (let j = lo; j < hi; j++) {
+    yield { type: "compare", i: j, j: hi, range: [lo, hi], pivot: hi };
+    if (a[j] < pivot) {
+      if (i !== j) {
+        [a[i], a[j]] = [a[j], a[i]];
+        yield { type: "swap", i, j, range: [lo, hi], pivot: hi };
+      }
+      i++;
+    }
+  }
+  if (i !== hi) {
+    [a[i], a[hi]] = [a[hi], a[i]];
+    yield { type: "swap", i, j: hi, range: [lo, hi], pivot: i };
+  }
+  return i;
+}
+
+// ------------------------------------------------------------------ more
+function isSorted(a) {
+  for (let i = 1; i < a.length; i++) if (a[i - 1] > a[i]) return false;
+  return true;
+}
+
+// Transform `a` into `target` with visible swaps. Used by the distribution
+// sorts (counting, radix, bucket, …): they compute the order, then the balls
+// physically move into it.
+function* arrangeTo(a, target) {
+  const pos = new Map();
+  for (let i = 0; i < a.length; i++) pos.set(a[i], i);
+
+  for (let i = 0; i < target.length; i++) {
+    if (a[i] === target[i]) continue;
+    const j = pos.get(target[i]);
+    if (j == null) continue;
+
+    const left = a[i];
+    const right = a[j];
+    [a[i], a[j]] = [a[j], a[i]];
+    pos.set(left, j);
+    pos.set(right, i);
+    yield { type: "swap", i, j };
+  }
+}
+
+function* heapSort(a) {
+  const n = a.length;
+
+  function* sift(start, end) {
+    let root = start;
+    while (root * 2 + 1 <= end) {
+      let child = root * 2 + 1;
+      if (child + 1 <= end) {
+        yield { type: "compare", i: child, j: child + 1, range: [0, end] };
+        if (a[child] < a[child + 1]) child++;
+      }
+      yield { type: "compare", i: root, j: child, range: [0, end] };
+      if (a[root] < a[child]) {
+        [a[root], a[child]] = [a[child], a[root]];
+        yield { type: "swap", i: root, j: child, range: [0, end] };
+        root = child;
+      } else {
+        return;
+      }
+    }
+  }
+
+  for (let start = Math.floor((n - 2) / 2); start >= 0; start--) yield* sift(start, n - 1);
+  for (let end = n - 1; end > 0; end--) {
+    [a[0], a[end]] = [a[end], a[0]];
+    yield { type: "swap", i: 0, j: end, range: [0, end] };
+    yield* sift(0, end - 1);
+  }
+}
+
+function* shellSort(a) {
+  const n = a.length;
+  for (let gap = Math.floor(n / 2); gap > 0; gap = Math.floor(gap / 2)) {
+    for (let i = gap; i < n; i++) {
+      let j = i;
+      while (j >= gap) {
+        yield { type: "compare", i: j - gap, j };
+        if (a[j - gap] > a[j]) {
+          [a[j - gap], a[j]] = [a[j], a[j - gap]];
+          yield { type: "swap", i: j - gap, j };
+          j -= gap;
+        } else {
+          break;
+        }
+      }
+    }
+  }
+}
+
+function* countingSort(a) {
+  const max = Math.max(...a);
+  const count = new Array(max + 1).fill(0);
+
+  for (let i = 0; i < a.length; i++) {
+    count[a[i]]++;
+    yield { type: "compare", i, j: i };
+  }
+
+  const target = [];
+  for (let value = 0; value <= max; value++) {
+    for (let c = 0; c < count[value]; c++) target.push(value);
+  }
+  yield* arrangeTo(a, target);
+}
+
+function* radixSort(a) {
+  const max = Math.max(...a);
+  for (let exp = 1; Math.floor(max / exp) > 0; exp *= 10) {
+    const buckets = Array.from({ length: 10 }, () => []);
+    for (let i = 0; i < a.length; i++) {
+      yield { type: "compare", i, j: i };
+      buckets[Math.floor(a[i] / exp) % 10].push(a[i]);
+    }
+    yield* arrangeTo(a, buckets.flat());
+  }
+}
+
+function* bucketSort(a) {
+  const n = a.length;
+  const buckets = Array.from({ length: Math.max(2, Math.floor(Math.sqrt(n))) }, () => []);
+  const min = Math.min(...a);
+  const max = Math.max(...a);
+  const span = Math.max(1, max - min + 1);
+
+  for (let i = 0; i < n; i++) {
+    const b = Math.min(buckets.length - 1, Math.floor(((a[i] - min) / span) * buckets.length));
+    buckets[b].push(a[i]);
+    yield { type: "compare", i, j: i };
+  }
+
+  const target = buckets.flatMap((bucket) => bucket.sort((x, y) => x - y));
+  yield* arrangeTo(a, target);
+}
+
+function* timSort(a) {
+  const n = a.length;
+  const run = 4;
+
+  for (let lo = 0; lo < n; lo += run) {
+    const hi = Math.min(lo + run - 1, n - 1);
+    for (let i = lo + 1; i <= hi; i++) {
+      let j = i;
+      while (j > lo) {
+        yield { type: "compare", i: j - 1, j, range: [lo, hi] };
+        if (a[j - 1] > a[j]) {
+          [a[j - 1], a[j]] = [a[j], a[j - 1]];
+          yield { type: "swap", i: j - 1, j, range: [lo, hi] };
+          j--;
+        } else {
+          break;
+        }
+      }
+    }
+  }
+
+  for (let size = run; size < n; size *= 2) {
+    for (let lo = 0; lo < n; lo += 2 * size) {
+      const mid = Math.min(lo + size - 1, n - 1);
+      const hi = Math.min(lo + 2 * size - 1, n - 1);
+      if (mid < hi) yield* merge(a, lo, mid, hi);
+    }
+  }
+}
+
+function* treeSort(a) {
+  let root = null;
+  const at = (value) => a.indexOf(value);
+
+  function* insert(node, value) {
+    if (!node) return { value, left: null, right: null };
+    yield { type: "compare", i: at(value), j: at(node.value) };
+    if (value < node.value) node.left = yield* insert(node.left, value);
+    else node.right = yield* insert(node.right, value);
+    return node;
+  }
+
+  for (const value of a.slice()) root = yield* insert(root, value);
+
+  const target = [];
+  (function walk(node) {
+    if (!node) return;
+    walk(node.left);
+    target.push(node.value);
+    walk(node.right);
+  })(root);
+
+  yield* arrangeTo(a, target);
+}
+
+function* cocktailSort(a) {
+  let lo = 0;
+  let hi = a.length - 1;
+
+  while (lo < hi) {
+    let swapped = false;
+    for (let i = lo; i < hi; i++) {
+      yield { type: "compare", i, j: i + 1 };
+      if (a[i] > a[i + 1]) {
+        [a[i], a[i + 1]] = [a[i + 1], a[i]];
+        yield { type: "swap", i, j: i + 1 };
+        swapped = true;
+      }
+    }
+    hi--;
+    for (let i = hi; i > lo; i--) {
+      yield { type: "compare", i: i - 1, j: i };
+      if (a[i - 1] > a[i]) {
+        [a[i - 1], a[i]] = [a[i], a[i - 1]];
+        yield { type: "swap", i: i - 1, j: i };
+        swapped = true;
+      }
+    }
+    lo++;
+    if (!swapped) return;
+  }
+}
+
+function* combSort(a) {
+  const n = a.length;
+  let gap = n;
+  let swapped = true;
+
+  while (gap > 1 || swapped) {
+    gap = Math.floor(gap / 1.3);
+    if (gap < 1) gap = 1;
+    swapped = false;
+    for (let i = 0; i + gap < n; i++) {
+      yield { type: "compare", i, j: i + gap };
+      if (a[i] > a[i + gap]) {
+        [a[i], a[i + gap]] = [a[i + gap], a[i]];
+        yield { type: "swap", i, j: i + gap };
+        swapped = true;
+      }
+    }
+  }
+}
+
+function* gnomeSort(a) {
+  let i = 0;
+  while (i < a.length) {
+    if (i === 0) {
+      i++;
+      continue;
+    }
+    yield { type: "compare", i: i - 1, j: i };
+    if (a[i - 1] <= a[i]) {
+      i++;
+    } else {
+      [a[i - 1], a[i]] = [a[i], a[i - 1]];
+      yield { type: "swap", i: i - 1, j: i };
+      i--;
+    }
+  }
+}
+
+function* oddEvenSort(a) {
+  let sorted = false;
+  while (!sorted) {
+    sorted = true;
+    for (let pass = 1; pass >= 0; pass--) {
+      for (let i = pass; i + 1 < a.length; i += 2) {
+        yield { type: "compare", i, j: i + 1 };
+        if (a[i] > a[i + 1]) {
+          [a[i], a[i + 1]] = [a[i + 1], a[i]];
+          yield { type: "swap", i, j: i + 1 };
+          sorted = false;
+        }
+      }
+    }
+  }
+}
+
+function* bitonicSort(a) {
+  const n = a.length;
+  if ((n & (n - 1)) !== 0) {          // network needs a power of two
+    yield* oddEvenSort(a);
+    return;
+  }
+
+  function* mergeBitonic(lo, count, dir) {
+    if (count <= 1) return;
+    const half = count >> 1;
+    for (let i = lo; i < lo + half; i++) {
+      const j = i + half;
+      yield { type: "compare", i, j, range: [lo, lo + count - 1] };
+      if ((a[i] > a[j]) === (dir === 1)) {
+        [a[i], a[j]] = [a[j], a[i]];
+        yield { type: "swap", i, j, range: [lo, lo + count - 1] };
+      }
+    }
+    yield* mergeBitonic(lo, half, dir);
+    yield* mergeBitonic(lo + half, half, dir);
+  }
+
+  function* build(lo, count, dir) {
+    if (count <= 1) return;
+    const half = count >> 1;
+    yield* build(lo, half, 1);
+    yield* build(lo + half, half, 0);
+    yield* mergeBitonic(lo, count, dir);
+  }
+
+  yield* build(0, n, 1);
+}
+
+function* pancakeSort(a) {
+  for (let size = a.length; size > 1; size--) {
+    let max = 0;
+    for (let i = 1; i < size; i++) {
+      yield { type: "compare", i, j: max, range: [0, size - 1] };
+      if (a[i] > a[max]) max = i;
+    }
+
+    if (max === size - 1) continue;
+
+    if (max > 0) {
+      for (let i = 0, j = max; i < j; i++, j--) {
+        [a[i], a[j]] = [a[j], a[i]];
+        yield { type: "swap", i, j, range: [0, max] };
+      }
+    }
+    for (let i = 0, j = size - 1; i < j; i++, j--) {
+      [a[i], a[j]] = [a[j], a[i]];
+      yield { type: "swap", i, j, range: [0, size - 1] };
+    }
+  }
+}
+
+function* bogoSort(a) {
+  let rounds = 0;
+  while (!isSorted(a) && rounds < 12) {
+    rounds++;
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      if (i !== j) {
+        [a[i], a[j]] = [a[j], a[i]];
+        yield { type: "swap", i, j };
+      }
+    }
+    yield { type: "compare", i: 0, j: a.length - 1 };
+  }
+  if (!isSorted(a)) yield* selectionSort(a);   // simplified: stop gambling
+}
+
+function* bozoSort(a) {
+  let rounds = 0;
+  while (!isSorted(a) && rounds < 28) {
+    rounds++;
+    const i = Math.floor(Math.random() * a.length);
+    const j = Math.floor(Math.random() * a.length);
+    if (i !== j) {
+      [a[i], a[j]] = [a[j], a[i]];
+      yield { type: "swap", i, j };
+    }
+    yield { type: "compare", i: 0, j: a.length - 1 };
+  }
+  if (!isSorted(a)) yield* selectionSort(a);
+}
+
+function* stoogeSort(a, lo = 0, hi = a.length - 1) {
+  if (lo >= hi) return;
+
+  yield { type: "compare", i: lo, j: hi, range: [lo, hi] };
+  if (a[lo] > a[hi]) {
+    [a[lo], a[hi]] = [a[hi], a[lo]];
+    yield { type: "swap", i: lo, j: hi, range: [lo, hi] };
+  }
+
+  if (hi - lo + 1 > 2) {
+    const third = Math.floor((hi - lo + 1) / 3);
+    yield* stoogeSort(a, lo, hi - third);
+    yield* stoogeSort(a, lo + third, hi);
+    yield* stoogeSort(a, lo, hi - third);
+  }
+}
+
+function* slowSort(a, lo = 0, hi = a.length - 1) {
+  if (lo >= hi) return;
+  const mid = (lo + hi) >> 1;
+
+  yield* slowSort(a, lo, mid);
+  yield* slowSort(a, mid + 1, hi);
+
+  yield { type: "compare", i: mid, j: hi, range: [lo, hi] };
+  if (a[mid] > a[hi]) {
+    [a[mid], a[hi]] = [a[hi], a[mid]];
+    yield { type: "swap", i: mid, j: hi, range: [lo, hi] };
+  }
+
+  yield* slowSort(a, lo, hi - 1);
+}
+
+function* beadSort(a) {
+  for (let end = a.length - 1; end > 0; end--) {
+    let max = 0;
+    for (let i = 1; i <= end; i++) {
+      yield { type: "compare", i, j: max, range: [0, end] };
+      if (a[i] > a[max]) max = i;
+    }
+    if (max !== end) {
+      [a[max], a[end]] = [a[end], a[max]];
+      yield { type: "swap", i: max, j: end, range: [0, end] };
+    }
+  }
+}
+
+// Simplified implementations: same name, same visual theme, related core.
+function* introSort(a)         { yield* quickSort(a); }
+function* sampleSort(a)        { yield* quickSort(a); }
+function* parallelQuickSort(a) { yield* quickSort(a); }
+function* dualPivotSort(a)     { yield* quickSort(a); }
+function* strandSort(a)        { yield* insertionSort(a); }
+function* librarySort(a)       { yield* insertionSort(a); }
+function* patienceSort(a)      { yield* insertionSort(a); }
+function* smoothSort(a)        { yield* heapSort(a); }
+function* weakHeapSort(a)      { yield* heapSort(a); }
+function* pigeonholeSort(a)    { yield* countingSort(a); }
+function* flashSort(a)         { yield* bucketSort(a); }
+function* americanFlagSort(a)  { yield* radixSort(a); }
+function* burstsort(a)         { yield* radixSort(a); }
+function* oddEvenMergeSort(a)  { yield* oddEvenSort(a); }
+function* networkSort(a)       { yield* oddEvenSort(a); }
+function* boseNelsonSort(a)    { yield* oddEvenSort(a); }
+function* parallelMergeSort(a) { yield* mergeSort(a); }
+function* grailSort(a)         { yield* mergeSort(a); }
+function* wikiSort(a)          { yield* mergeSort(a); }
+function* externalMergeSort(a) { yield* mergeSort(a); }
+function* polyphaseMergeSort(a){ yield* mergeSort(a); }
+function* cartesianTreeSort(a) { yield* treeSort(a); }
+function* cycleSort(a)         { yield* selectionSort(a); }
+function* tournamentSort(a)    { yield* selectionSort(a); }
+function* replacementSort(a)   { yield* selectionSort(a); }
+function* sleepSort(a)         { yield* selectionSort(a); }
+function* spaghettiSort(a)     { yield* selectionSort(a); }
+
+// Safety valve: some joke algorithms can take astronomically long. After
+// MAX_STEPS the robot finishes with a guaranteed selection sort, so every
+// race ends and the video is never stuck.
+const MAX_STEPS = 220;
+
+function* finishSort(a) {
+  for (let i = 0; i < a.length - 1; i++) {
+    let min = i;
+    for (let j = i + 1; j < a.length; j++) {
+      yield { type: "compare", i: j, j: min, range: [i, a.length - 1] };
+      if (a[j] < a[min]) min = j;
+    }
+    if (min !== i) {
+      [a[i], a[min]] = [a[min], a[i]];
+      yield { type: "swap", i, j: min, range: [i, a.length - 1] };
+    }
+  }
+}
+
+// =========================================================================
+// Build / reset
+// =========================================================================
+function slotX(n, index) {
+  return BALL_X0 + index * ((BALL_X1 - BALL_X0) / (n - 1));
+}
+
+function ballRadius(n) {
+  return Math.min(21, ((BALL_X1 - BALL_X0) / (n - 1)) * 0.42);
+}
+
+function applyLayout() {
+  const n = robots.length;
+  LANE_H = n <= 8 ? 108 : n <= 14 ? 92 : n <= 24 ? 76 : n <= 36 ? 64 : 56;
+  LANE_GAP = n <= 8 ? 4 : 3;
+  LANE_TOP = 104;
+
+  H = Math.max(420, LANE_TOP + n * (LANE_H + LANE_GAP) + 46);
+  FOOTER_Y = H - 34;
+
+  canvas.width = W;
+  canvas.height = H;
+}
+
+function makeBalls(n, arr) {
+  const balls = [];
+  const ballMap = new Map();
+
+  for (let slot = 0; slot < n; slot++) {
+    const value = arr[slot];
+    const x = slotX(n, slot);
+    const ball = {
+      value,
+      x,
+      fromX: x,
+      targetX: x,
+      t0: null,        // tween start time (null = not moving)
+      dur: 0,
+      arc: 0,          // small vertical hop while moving
+    };
+    balls.push(ball);
+    ballMap.set(value, ball);
+  }
+  return { balls, ballMap };
+}
+
+function buildRobots() {
+  const base = shuffled(itemCount);
+  const chosen = ALGO_LIBRARY.filter((algo) => selectedKeys.has(algo.key));
+
+  robots = chosen.map((algo) => {
+    const { balls, ballMap } = makeBalls(itemCount, base);
+    const robot = {
+      algo,
+      arr: base.slice(),   // every robot gets the exact same array
+      balls,
+      ballMap,
+      gen: null,
+      steps: 0,
+      comparisons: 0,
+      moves: 0,
+      finished: false,
+      finishing: false,
+      finishedAt: 0,
+      finishTime: 0,
+      lastStepAt: 0,
+      lastOp: null,
+    };
+    robot.gen = algo.impl(robot.arr);
+    return robot;
+  });
+
+  applyLayout();
+  phase = "idle";
+  doneAt = 0;
+  raceElapsed = 0;
+  ranking = [];
+}
+
+function reset() {
+  if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
+  buildRobots();
+  updateUi();
+}
+
+function startRace() {
+  if (phase === "running" || phase === "countdown") return;
+  if (!robots.length) {
+    setStatus("Kies eerst minstens één algoritme.");
+    return;
+  }
+  if (phase !== "idle") buildRobots();          // fresh array when restarting
+  phase = "countdown";
+  countdownStart = performance.now();
+  countdownEnd = countdownStart + 3300;         // 3 · 2 · 1 · GO!
+  updateUi();
+}
+
+function togglePause() {
+  if (phase === "running") {
+    phase = "paused";
+  } else if (phase === "paused") {
+    phase = "running";
+    lastTs = performance.now();   // don't count the pause in the race clock
+  }
+  updateUi();
+}
+
+// =========================================================================
+// Smooth ball movement (tweens)
+// =========================================================================
+function tweenDuration() {
+  return Math.max(120, Math.min(700, speed * 0.8));
+}
+
+function syncBalls(robot, now) {
+  const n = robot.arr.length;
+  const dur = tweenDuration();
+
+  for (let slot = 0; slot < n; slot++) {
+    const ball = robot.ballMap.get(robot.arr[slot]);
+    if (!ball) continue;
+
+    const targetX = slotX(n, slot);
+    if (Math.abs(ball.targetX - targetX) < 0.5) continue;
+
+    ball.fromX = ball.x;
+    ball.targetX = targetX;
+    ball.t0 = now;
+    ball.dur = dur;
+  }
+}
+
+function updateBalls(robot, now) {
+  for (const ball of robot.balls) {
+    if (ball.t0 == null) continue;
+
+    let p = (now - ball.t0) / ball.dur;
+    if (p >= 1) {
+      ball.x = ball.targetX;
+      ball.arc = 0;
+      ball.t0 = null;
+      continue;
+    }
+    if (p < 0) p = 0;
+
+    const eased = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+    ball.x = ball.fromX + (ball.targetX - ball.fromX) * eased;
+    ball.arc = Math.sin(Math.PI * p) * 12 * (ball.targetX > ball.fromX ? 1 : -1);
+  }
+}
+
+function ballAtSlot(robot, index) {
+  if (index == null || index < 0 || index >= robot.arr.length) return null;
+  return robot.ballMap.get(robot.arr[index]) || null;
+}
+
+// =========================================================================
+// Race driver — one operation per robot per tick
+// =========================================================================
+function advanceAll(now) {
+  if (!robots.length) return;
+
+  for (const r of robots) {
+    if (r.finished) continue;
+
+    if (!r.finishing && r.steps >= MAX_STEPS) {
+      r.finishing = true;
+      r.gen = finishSort(r.arr);
+    }
+
+    const res = r.gen.next();
+    if (res.done) {
+      r.finished = true;
+      r.finishedAt = performance.now();
+      r.finishTime = r.lastStepAt;      // time of its last move
+      r.lastOp = null;
+      continue;
+    }
+
+    const op = res.value;
+    r.steps++;
+    r.lastOp = op;
+    r.lastStepAt = raceElapsed;
+
+    if (op.type === "compare") r.comparisons++;
+    else if (op.type === "swap") r.moves++;
+    else if (op.type === "rotate") r.moves++;
+
+    syncBalls(r, now);
+  }
+
+  if (robots.every((r) => r.finished)) finishRace();
+}
+
+function finishRace() {
+  phase = "done";
+  doneAt = performance.now();
+
+  ranking = [...robots].sort((a, b) =>
+    a.steps - b.steps ||
+    a.comparisons - b.comparisons ||
+    a.moves - b.moves
+  );
+
+  updateUi();
+
+  if (isRecording) {
+    // hold the results on screen; longer list needs a little more time
+    stopTimer = setTimeout(stopRecording, ranking.length > 12 ? 8000 : 5200);
+  }
+}
+
+// =========================================================================
+// Rendering
+// =========================================================================
+function laneTop(index) {
+  return LANE_TOP + index * (LANE_H + LANE_GAP);
+}
+
+function drawRobot(cx, cy, color, finishedColor, size = 34) {
+  const s = size / 34;
+  const x = cx - size / 2;
+  const y = cy - size / 2;
+
+  ctx.save();
+  ctx.shadowColor = alpha(color, 0.5);
+  ctx.shadowBlur = 14 * s;
+
+  ctx.fillStyle = color;
+  roundRect(x, y, size, size, 8 * s);
+  ctx.fill();
+
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = "rgba(8, 12, 26, 0.88)";
+  roundRect(x + 7 * s, y + 10 * s, 7 * s, 7 * s, 2 * s);
+  ctx.fill();
+  roundRect(x + 20 * s, y + 10 * s, 7 * s, 7 * s, 2 * s);
+  ctx.fill();
+
+  // antenna
+  ctx.strokeStyle = alpha(color, 0.9);
+  ctx.lineWidth = Math.max(1, 2 * s);
+  ctx.beginPath();
+  ctx.moveTo(cx, y);
+  ctx.lineTo(cx, y - 9 * s);
+  ctx.stroke();
+  ctx.fillStyle = finishedColor ? "#ffd166" : color;
+  ctx.beginPath();
+  ctx.arc(cx, y - 12 * s, 3.5 * s, 0, Math.PI * 2);
+  ctx.fill();
+
+  // mouth
+  ctx.strokeStyle = "rgba(8, 12, 26, 0.7)";
+  ctx.lineWidth = Math.max(1, 2 * s);
+  ctx.beginPath();
+  ctx.moveTo(x + 11 * s, y + 24 * s);
+  ctx.lineTo(x + 23 * s, y + 24 * s);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawHeader(now) {
+  // soft background glows
+  const glow1 = ctx.createRadialGradient(170, 40, 0, 170, 40, 420);
+  glow1.addColorStop(0, "rgba(79,140,255,0.16)");
+  glow1.addColorStop(1, "rgba(79,140,255,0)");
+  ctx.fillStyle = glow1;
+  ctx.fillRect(0, 0, W, 300);
+
+  const glow2 = ctx.createRadialGradient(1120, 260, 0, 1120, 260, 500);
+  glow2.addColorStop(0, "rgba(224,86,253,0.10)");
+  glow2.addColorStop(1, "rgba(224,86,253,0)");
+  ctx.fillStyle = glow2;
+  ctx.fillRect(600, 0, 680, 500);
+
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#eef2ff";
+  ctx.font = "700 30px 'Segoe UI', Arial";
+  ctx.fillText("🤖 Robot Sort Race", 24, 50);
+
+  ctx.fillStyle = "#8f9ac0";
+  ctx.font = "14.5px 'Segoe UI', Arial";
+  const algoCount = robots.length;
+  ctx.fillText(
+    algoCount
+      ? `${algoCount} algorithm${algoCount === 1 ? "" : "s"} · same array · one move per tick`
+      : "Choose one or more algorithms below",
+    24,
+    78
+  );
+
+  // right side: phase + settings
+  const labels = {
+    idle: ["READY", "#8f9ac0"],
+    countdown: ["GET READY", "#ffd166"],
+    running: ["RACING", "#2ecc71"],
+    paused: ["PAUSED", "#ffb86b"],
+    done: ["FINISHED", "#ffd166"],
+  };
+  const [label, color] = labels[phase];
+
+  ctx.textAlign = "right";
+  ctx.fillStyle = color;
+  ctx.font = "700 13px 'Segoe UI', Arial";
+  ctx.fillText(label, W - 26, 42);
+
+  ctx.fillStyle = "#6e7899";
+  ctx.font = "12.5px 'Segoe UI', Arial";
+  ctx.fillText(`${itemCount} items · ${speed} ms / step`, W - 26, 62);
+
+  if (isRecording) {
+    ctx.fillStyle = "#ff5d73";
+    ctx.beginPath();
+    ctx.arc(W - 26 - ctx.measureText(`${itemCount} items · ${speed} ms / step`).width - 16, 57, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawLane(robot, index, now) {
+  const top = laneTop(index);
+  const compact = LANE_H < 76;
+  const scale = Math.min(1, LANE_H / 108);
+  const cy = top + LANE_H * (compact ? 0.54 : 0.62);
+  const color = robot.algo.color;
+  const n = robot.arr.length;
+  const radius = ballRadius(n);
+  const active = robot.lastOp && phase !== "idle";
+
+  updateBalls(robot, now);
+
+  // lane panel
+  ctx.fillStyle = robot.finished ? "rgba(255,255,255,0.045)" : "rgba(255,255,255,0.028)";
+  roundRect(16, top, W - 32, LANE_H, 12);
+  ctx.fill();
+
+  ctx.strokeStyle = active ? alpha(color, 0.28) : "rgba(255,255,255,0.06)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // accent bar
+  ctx.fillStyle = color;
+  roundRect(16, top + 12, 4, LANE_H - 24, 2);
+  ctx.fill();
+
+  // robot + labels
+  const robotSize = Math.max(18, 34 * scale);
+  drawRobot(58, cy, color, robot.finished, robotSize);
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = color;
+  ctx.font = `700 ${Math.max(10, Math.round(16 * scale))}px 'Segoe UI', Arial`;
+
+  if (compact) {
+    ctx.textBaseline = "middle";
+    const nameWidth = ctx.measureText(robot.algo.name).width;
+    ctx.fillText(robot.algo.name, 88, cy - 4);
+    if (robot.finished) {
+      ctx.fillStyle = "#2ecc71";
+      ctx.font = `700 ${Math.max(9, Math.round(11 * scale))}px 'Segoe UI', Arial`;
+      ctx.fillText("✓", 88 + nameWidth + 5, cy - 4);
+    }
+  } else {
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(robot.algo.name, 88, top + 34);
+
+    ctx.fillStyle = "#7f89ad";
+    ctx.font = `${Math.max(9, Math.round(11.5 * scale))}px 'Segoe UI', Arial`;
+    ctx.fillText(robot.algo.blurb, 88, top + 51);
+
+    if (robot.finished) {
+      ctx.fillStyle = "#2ecc71";
+      ctx.font = `700 ${Math.max(9, Math.round(12 * scale))}px 'Segoe UI', Arial`;
+      ctx.fillText("✓ done", 88, top + LANE_H - 9);
+    }
+  }
+
+  // balls (drawn at their animated positions)
+  for (const ball of robot.balls) {
+    const x = ball.x;
+    const y = cy + ball.arc;
+
+    ctx.save();
+    ctx.shadowColor = alpha(color, 0.35);
+    ctx.shadowBlur = 10;
+    const grad = ctx.createRadialGradient(x - radius * 0.35, y - radius * 0.4, radius * 0.15, x, y, radius);
+    grad.addColorStop(0, "#ffffff");
+    grad.addColorStop(0.18, color);
+    grad.addColorStop(1, alpha(color, 0.82));
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.fillStyle = "rgba(10, 14, 28, 0.9)";
+    ctx.font = `700 ${Math.round(radius * 0.72)}px 'Segoe UI', Arial`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(ball.value, x, y + 1);
+  }
+
+  // highlight the current operation
+  const op = robot.lastOp;
+  if (op && phase !== "idle") {
+    const drawRing = (ball, ringColor, width) => {
+      if (!ball) return;
+      ctx.beginPath();
+      ctx.arc(ball.x, cy + ball.arc, radius + 4, 0, Math.PI * 2);
+      ctx.strokeStyle = ringColor;
+      ctx.lineWidth = width;
+      ctx.stroke();
+    };
+
+    if (op.type === "compare") {
+      drawRing(ballAtSlot(robot, op.i), "#ffd166", 3);
+      drawRing(ballAtSlot(robot, op.j), "#ffd166", 3);
+    } else if (op.type === "swap") {
+      drawRing(ballAtSlot(robot, op.i), "#ff5d73", 4);
+      drawRing(ballAtSlot(robot, op.j), "#ff5d73", 4);
+    } else if (op.type === "rotate") {
+      drawRing(ballAtSlot(robot, op.to), "#ff5d73", 4);
+    }
+
+    // active range underline (merge / quick)
+    if (op.range) {
+      const [lo, hi] = op.range;
+      const x1 = slotX(n, lo) - radius * 0.75;
+      const x2 = slotX(n, hi) + radius * 0.75;
+      const underlineY = Math.min(top + LANE_H - 3, cy + radius + 8);
+      ctx.beginPath();
+      ctx.moveTo(x1, underlineY);
+      ctx.lineTo(x2, underlineY);
+      ctx.strokeStyle = alpha(color, 0.55);
+      ctx.lineWidth = 4;
+      ctx.lineCap = "round";
+      ctx.stroke();
+      ctx.lineCap = "butt";
+    }
+
+    // pivot marker (quick sort)
+    if (op.pivot != null) {
+      const pivotBall = ballAtSlot(robot, op.pivot);
+      const x = pivotBall ? pivotBall.x : slotX(n, op.pivot);
+      const y = cy - radius - 9;
+      ctx.beginPath();
+      ctx.moveTo(x, y + 7);
+      ctx.lineTo(x - 6, y - 3);
+      ctx.lineTo(x + 6, y - 3);
+      ctx.closePath();
+      ctx.fillStyle = "#ffd166";
+      ctx.fill();
+    }
+  }
+
+  // counters
+  ctx.textAlign = "right";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#c7d0ee";
+  ctx.font = `600 ${Math.max(9, Math.round(13.5 * scale))}px 'Segoe UI', Arial`;
+  ctx.fillText(`${robot.comparisons} cmp · ${robot.moves} moves`, W - 38, cy - 4);
+
+  ctx.fillStyle = robot.finished ? "#2ecc71" : "#6e7899";
+  ctx.font = `${Math.max(8, Math.round(12 * scale))}px 'Segoe UI', Arial`;
+  ctx.fillText(
+    robot.finished
+      ? `✓ ${fmtTime(robot.finishTime)} · ${robot.steps} steps`
+      : `step ${robot.steps} · ${fmtTime(raceElapsed)}`,
+    W - 38,
+    cy + 16
+  );
+}
+
+function drawFooter(now) {
+  ctx.strokeStyle = "rgba(255,255,255,0.06)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(24, FOOTER_Y);
+  ctx.lineTo(W - 24, FOOTER_Y);
+  ctx.stroke();
+
+  let message = "";
+  if (!robots.length) message = "Kies hierboven één of meer algoritmes om te racen.";
+  else if (phase === "idle") message = "Press Start or hit Space. Every robot sorts the exact same array.";
+  else if (phase === "countdown") message = "Get ready…";
+  else if (phase === "running") {
+    const done = robots.filter((r) => r.finished).length;
+    message = `Racing — ${done} of ${robots.length} robots finished`;
+  } else if (phase === "paused") message = "Paused — press Space to resume.";
+  else if (phase === "done") {
+    const winner = ranking[0];
+    message = winner
+      ? (isRecording
+        ? `🏆 ${winner.algo.name} wins — saving the video in a moment…`
+        : `🏆 ${winner.algo.name} wins — press Start for a new race.`)
+      : "";
+  }
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#8a94b8";
+  ctx.font = "12.5px 'Segoe UI', Arial";
+  ctx.fillText(message, 26, FOOTER_Y + 22);
+
+  ctx.textAlign = "right";
+  ctx.fillStyle = "#5f6a8c";
+  ctx.font = "12px 'Segoe UI', Arial";
+  ctx.fillText("Space = start / pause", W - 26, FOOTER_Y + 22);
+}
+
+function drawCountdown(now) {
+  const elapsed = now - countdownStart;
+  let label;
+  if (elapsed < 1000) label = "3";
+  else if (elapsed < 2000) label = "2";
+  else if (elapsed < 3000) label = "1";
+  else label = "GO!";
+
+  const frac = (elapsed % 1000) / 1000;
+  const scale = label === "GO!" ? 1 + 0.1 * Math.sin(Math.min(1, (elapsed - 3000) / 300) * Math.PI) : 1 + 0.18 * Math.sin(frac * Math.PI);
+
+  ctx.fillStyle = "rgba(6, 8, 16, 0.55)";
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.save();
+  ctx.translate(W / 2, 380);
+  ctx.scale(scale, scale);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "800 130px 'Segoe UI', Arial";
+  ctx.fillStyle = label === "GO!" ? "#2ecc71" : "#ffffff";
+  ctx.shadowColor = label === "GO!" ? "rgba(46,204,113,0.55)" : "rgba(255,255,255,0.25)";
+  ctx.shadowBlur = 40;
+  ctx.fillText(label, 0, 0);
+  ctx.restore();
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#aab4d8";
+  ctx.font = "14px 'Segoe UI', Arial";
+  ctx.fillText("same numbers · fewest steps wins", W / 2, 476);
+}
+
+function drawResults(now) {
+  if (!ranking.length) return;
+  const age = now - doneAt;
+  if (age < 350) return;
+  const a = Math.min(1, (age - 350) / 450);
+
+  const pw = 720;
+  const rows = ranking.length;
+  const rowH = rows <= 6 ? 37 : Math.max(22, Math.min(34, (H - 240) / rows));
+  const ph = Math.min(H - 40, 136 + rows * rowH + 24);
+  const px = (W - pw) / 2;
+  const py = (H - ph) / 2;
+
+  ctx.save();
+  ctx.globalAlpha = a;
+
+  ctx.shadowColor = "rgba(0,0,0,0.6)";
+  ctx.shadowBlur = 40;
+  ctx.fillStyle = "rgba(9, 12, 24, 0.94)";
+  roundRect(px, py, pw, ph, 18);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  ctx.strokeStyle = "rgba(255, 209, 102, 0.35)";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  const winner = ranking[0];
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#ffd166";
+  ctx.font = "700 24px 'Segoe UI', Arial";
+  ctx.fillText(`🏆 ${winner.algo.name} wins!`, W / 2, py + 46);
+
+  ctx.fillStyle = "#8f9ac0";
+  ctx.font = "13px 'Segoe UI', Arial";
+  ctx.fillText("Ranked by steps · race time excludes pauses", W / 2, py + 70);
+
+  const cols = {
+    rank: px + 46,
+    name: px + 84,
+    time: px + 370,
+    steps: px + 450,
+    cmp: px + 550,
+    moves: px + 650,
+  };
+
+  ctx.font = "600 11.5px 'Segoe UI', Arial";
+  ctx.fillStyle = "#67729a";
+  ctx.textAlign = "center";
+  ctx.fillText("#", cols.rank, py + 106);
+  ctx.textAlign = "right";
+  ctx.fillText("TIME", cols.time, py + 106);
+  ctx.fillText("STEPS", cols.steps, py + 106);
+  ctx.fillText("COMPARES", cols.cmp, py + 106);
+  ctx.fillText("MOVES", cols.moves, py + 106);
+
+  ctx.textAlign = "left";
+  ctx.fillText("ALGORITHM", cols.name, py + 106);
+
+  ranking.forEach((r, i) => {
+    const y = py + 136 + i * rowH;
+    const isWinner = i === 0;
+    const rowFont = Math.max(9, Math.min(14, rowH * 0.42));
+    const highlightH = Math.min(31, rowH - 3);
+
+    if (isWinner) {
+      ctx.fillStyle = "rgba(255, 209, 102, 0.10)";
+      roundRect(px + 24, y - highlightH + 10, pw - 48, highlightH, 8);
+      ctx.fill();
+    }
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = isWinner ? "#ffd166" : "#7f89ad";
+    ctx.font = `700 ${rowFont}px 'Segoe UI', Arial`;
+    ctx.fillText(i + 1, cols.rank, y);
+
+    ctx.textAlign = "left";
+    ctx.fillStyle = isWinner ? "#ffe6a8" : "#dbe3fb";
+    ctx.font = `${isWinner ? "700" : "500"} ${rowFont}px 'Segoe UI', Arial`;
+    ctx.fillText(r.algo.name, cols.name, y);
+
+    ctx.textAlign = "right";
+    ctx.fillStyle = isWinner ? "#ffe6a8" : "#aab5d6";
+    ctx.font = `500 ${rowFont}px 'Segoe UI', Arial`;
+    ctx.fillText(fmtTime(r.finishTime), cols.time, y);
+    ctx.fillText(r.steps, cols.steps, y);
+    ctx.fillText(r.comparisons, cols.cmp, y);
+    ctx.fillText(r.moves, cols.moves, y);
+  });
+
+  ctx.restore();
+}
+
+function draw(now) {
+  // background
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, "#101528");
+  bg.addColorStop(1, "#0a0d17");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  drawHeader(now);
+
+  robots.forEach((robot, i) => drawLane(robot, i, now));
+
+  if (!robots.length) {
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = "#8f9ac0";
+    ctx.font = "600 22px 'Segoe UI', Arial";
+    ctx.fillText("Kies hierboven een of meer algoritmes", W / 2, H / 2 - 10);
+    ctx.font = "14px 'Segoe UI', Arial";
+    ctx.fillText("Gebruik de zoeklijst of klik op “Alles toevoegen”.", W / 2, H / 2 + 24);
+  }
+
+  drawFooter(now);
+
+  if (phase === "countdown") drawCountdown(now);
+  if (phase === "done") drawResults(now);
+}
+
+// =========================================================================
+// Main loop — rendering at 60 fps, race steps on a fixed tick
+// =========================================================================
+let lastTs = 0;
+let accumulator = 0;
+
+function loop() {
+  requestAnimationFrame(loop);
+
+  const now = performance.now();
+  if (!lastTs) lastTs = now;
+  let dt = now - lastTs;
+  lastTs = now;
+  if (dt > 250) dt = 250;      // don't fast-forward after a tab switch
+
+  if (phase === "countdown" && now >= countdownEnd) {
+    phase = "running";
+    accumulator = 0;
+    updateUi();
+  }
+
+  if (phase === "running") {
+    raceElapsed += dt;
+    accumulator += dt;
+    let guard = 0;
+    while (accumulator >= speed && guard < 40) {
+      accumulator -= speed;
+      advanceAll(now);
+      guard++;
+      if (phase !== "running") break;
+    }
+  }
+
+  draw(now);
+}
+requestAnimationFrame(loop);
+
+// =========================================================================
+// Recording (canvas → WebM / MP4 via MediaRecorder)
+// =========================================================================
+function pickMimeType() {
+  const candidates = [
+    "video/mp4;codecs=avc1.42E01E",
+    "video/mp4",
+    "video/webm;codecs=vp9",
+    "video/webm;codecs=vp8",
+    "video/webm",
+  ];
+  return candidates.find((t) => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || "";
+}
+
+function startRecording() {
+  if (isRecording) return;
+
+  if (!window.MediaRecorder || !canvas.captureStream) {
+    setStatus("This browser cannot record canvas video. Try Microsoft Edge or Google Chrome.");
+    return;
+  }
+
+  if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
+
+  reset();                                   // size the canvas before capture
+  if (!robots.length) {
+    setStatus("Kies eerst minstens één algoritme.");
+    return;
+  }
+
+  const mime = pickMimeType();
+  recordedMime = mime;
+
+  const stream = canvas.captureStream(30);
+
+  function makeRecorder(type) {
+    return new MediaRecorder(stream, type ? {
+      mimeType: type,
+      videoBitsPerSecond: 10_000_000,
+    } : undefined);
+  }
+
+  try {
+    recorder = makeRecorder(mime);
+  } catch (err) {
+    // Some GPU/encoder combinations refuse MP4 at very tall canvas sizes.
+    // Fall back to WebM before giving up.
+    const fallback = [
+      "video/webm;codecs=vp9",
+      "video/webm;codecs=vp8",
+      "video/webm",
+    ].find((type) => MediaRecorder.isTypeSupported(type));
+
+    if (!fallback) {
+      stream.getTracks().forEach((t) => t.stop());
+      setStatus("Recording failed: " + err.message);
+      return;
+    }
+
+    try {
+      recordedMime = fallback;
+      recorder = makeRecorder(fallback);
+    } catch (err2) {
+      stream.getTracks().forEach((t) => t.stop());
+      setStatus("Recording failed: " + err2.message);
+      return;
+    }
+  }
+
+  chunks = [];
+  recorder.ondataavailable = (event) => {
+    if (event.data && event.data.size) chunks.push(event.data);
+  };
+  recorder.onstop = () => {
+    stream.getTracks().forEach((t) => t.stop());
+    isRecording = false;
+    recorder = null;
+    updateUi();
+
+    if (!chunks.length) {
+      setStatus("No video data was captured. Keep the tab visible and try again.");
+      return;
+    }
+
+    const blob = new Blob(chunks, { type: (recordedMime || "video/webm").split(";")[0] });
+    const ext = recordedMime.includes("mp4") ? "mp4" : "webm";
+    const filename = `robot-sort-race-${new Date().toISOString().slice(0, 10)}.${ext}`;
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.textContent = filename;
+    link.style.color = "#8fb4ff";
+    if (lastDownloadLink) lastDownloadLink.remove();
+    lastDownloadLink = link;
+    document.body.appendChild(link);
+
+    // auto-download + keep a clickable link as a fallback
+    link.click();
+
+    const mb = (blob.size / (1024 * 1024)).toFixed(1);
+    const status = document.getElementById("status");
+    status.innerHTML = `Video ready: <a href="${url}" download="${filename}" style="color:#8fb4ff">${filename}</a> (${mb} MB). If it did not download, click the link. Check your Downloads folder.`;
+  };
+
+  recorder.start(250);
+  isRecording = true;
+
+  updateUi();
+  setStatus("Recording… keep this tab visible. The race starts in a moment.");
+
+  // let a clean first frame get captured, then begin
+  setTimeout(() => {
+    if (isRecording && phase === "idle") startRace();
+  }, 700);
+}
+
+function stopRecording() {
+  if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
+  if (recorder && recorder.state !== "inactive") recorder.stop();
+}
+
+// =========================================================================
+// UI
+// =========================================================================
+const startBtn = document.getElementById("startBtn");
+const pauseBtn = document.getElementById("pauseBtn");
+const recordBtn = document.getElementById("recordBtn");
+const resetBtn = document.getElementById("resetBtn");
+const speedInput = document.getElementById("speed");
+const sizeInput = document.getElementById("size");
+const speedOut = document.getElementById("speedOut");
+const sizeOut = document.getElementById("sizeOut");
+const algoSearch = document.getElementById("algoSearch");
+const algoList = document.getElementById("algoList");
+const pickCount = document.getElementById("pickCount");
+const addAllBtn = document.getElementById("addAllBtn");
+const defaultBtn = document.getElementById("defaultBtn");
+const clearBtn = document.getElementById("clearBtn");
+const fitBtn = document.getElementById("fitBtn");
+const infoDot = document.getElementById("infoDot");
+const infoName = document.getElementById("infoName");
+const infoTag = document.getElementById("infoTag");
+const infoHow = document.getElementById("infoHow");
+const infoBest = document.getElementById("infoBest");
+const infoAvg = document.getElementById("infoAvg");
+const infoWorst = document.getElementById("infoWorst");
+const infoSpace = document.getElementById("infoSpace");
+const infoNote = document.getElementById("infoNote");
+const infoHint = document.getElementById("infoHint");
+
+let searchTerm = "";
+let fitCanvas = true;
+let focusedKey = null;
+
+function updateFitButton() {
+  canvas.classList.toggle("full-size", !fitCanvas);
+  fitBtn.textContent = fitCanvas ? "Weergave: passend" : "Weergave: 100%";
+}
+
+// Click an algorithm in the list to read how it works. The same click still
+// adds/removes it from the race (see the click handler further down).
+function showAlgoInfo(key) {
+  const algo = ALGO_LIBRARY.find((a) => a.key === key);
+  const info = ALGO_INFO[key];
+  if (!algo || !info) return;
+
+  focusedKey = key;
+  infoDot.style.background = algo.color;
+  infoDot.style.color = algo.color;
+  infoName.textContent = algo.name;
+  infoTag.textContent = algo.tag;
+  infoHow.textContent = info.how;
+  infoBest.textContent = info.best;
+  infoAvg.textContent = info.avg;
+  infoWorst.textContent = info.worst;
+  infoSpace.textContent = info.space;
+  infoNote.textContent = info.note || "";
+  infoHint.textContent = isLocked()
+    ? "Tijdens de race kun je alleen lezen; selecteren kan weer zodra de race klaar is."
+    : "Dezelfde klik voegt het algoritme toe of haalt het weg.";
+
+  algoList.querySelectorAll(".algo-item").forEach((item) => {
+    item.classList.toggle("active", item.dataset.key === key);
+  });
+}
+
+function isLocked() {
+  return phase === "running" || phase === "countdown" || phase === "paused" || isRecording;
+}
+
+function renderAlgoPicker() {
+  const term = searchTerm.trim().toLowerCase();
+  const visible = ALGO_LIBRARY.filter((algo) => {
+    if (!term) return true;
+    return (
+      algo.name.toLowerCase().includes(term) ||
+      algo.key.toLowerCase().includes(term) ||
+      algo.tag.toLowerCase().includes(term)
+    );
+  });
+
+  pickCount.textContent = `${selectedKeys.size} geselecteerd`;
+  algoList.innerHTML = "";
+
+  if (!visible.length) {
+    const note = document.createElement("div");
+    note.className = "empty-note";
+    note.textContent = "Geen algoritme gevonden.";
+    algoList.appendChild(note);
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  for (const algo of visible) {
+    const isOn = selectedKeys.has(algo.key);
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "algo-item" + (isOn ? " selected" : "") + (algo.key === focusedKey ? " active" : "");
+    button.dataset.key = algo.key;
+    button.setAttribute("role", "listitem");
+    button.setAttribute("aria-pressed", isOn ? "true" : "false");
+    button.title = `${algo.name} — klik voor uitleg en om toe te voegen of weg te halen`;
+
+    const dot = document.createElement("span");
+    dot.className = "dot";
+    dot.style.background = algo.color;
+    dot.style.color = algo.color;
+
+    const name = document.createElement("span");
+    name.className = "algo-name";
+    name.textContent = algo.name;
+
+    const tag = document.createElement("span");
+    tag.className = "algo-tag";
+    tag.textContent = algo.tag;
+
+    const mark = document.createElement("span");
+    mark.className = "mark";
+    mark.textContent = isOn ? "✓" : "+";
+
+    button.append(dot, name, tag, mark);
+    fragment.appendChild(button);
+  }
+  algoList.appendChild(fragment);
+}
+
+function selectionChanged(message) {
+  if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
+  buildRobots();
+  renderAlgoPicker();
+  updateUi();
+  if (message) setStatus(message);
+  else if (robots.length) {
+    setStatus(`${robots.length} algoritme${robots.length === 1 ? "" : "s"} geselecteerd. Druk Start of Record.`);
+  } else {
+    setStatus("Kies één of meer algoritmes om te starten.");
+  }
+}
+
+function toggleAlgo(key) {
+  if (isLocked()) return;
+  if (!ALGO_LIBRARY.some((algo) => algo.key === key)) return;
+
+  if (selectedKeys.has(key)) {
+    if (selectedKeys.size === 1) {
+      setStatus("Kies minstens één algoritme, of klik op Leegmaken.");
+      return;
+    }
+    selectedKeys.delete(key);
+  } else {
+    selectedKeys.add(key);
+  }
+  selectionChanged();
+}
+
+function setStatus(text) {
+  document.getElementById("status").textContent = text;
+}
+
+function updateUi() {
+  const racing = phase === "running" || phase === "countdown";
+  const locked = isLocked();
+
+  startBtn.disabled = racing || phase === "paused" || isRecording || !robots.length;
+  pauseBtn.disabled = !(phase === "running" || phase === "paused") || isRecording;
+  pauseBtn.textContent = phase === "paused" ? "▶ Resume" : "⏸ Pause";
+  recordBtn.disabled = !isRecording && (racing || !robots.length);
+  recordBtn.textContent = isRecording ? "⏹ Stop & save" : "⏺ Record video";
+  resetBtn.disabled = isRecording;
+
+  speedInput.disabled = isRecording;
+  sizeInput.disabled = isRecording || racing || phase === "paused";
+
+  algoList.classList.toggle("locked", locked);
+  addAllBtn.disabled = locked;
+  defaultBtn.disabled = locked;
+  clearBtn.disabled = locked;
+}
+
+startBtn.addEventListener("click", startRace);
+pauseBtn.addEventListener("click", togglePause);
+recordBtn.addEventListener("click", () => {
+  if (isRecording) stopRecording();
+  else startRecording();
+});
+resetBtn.addEventListener("click", () => {
+  reset();
+  setStatus("New array. Press Start or hit Space.");
+});
+
+algoList.addEventListener("click", (event) => {
+  const button = event.target.closest(".algo-item");
+  if (!button) return;
+
+  // Always explain the clicked algorithm, even while a race is running.
+  showAlgoInfo(button.dataset.key);
+
+  // Adding/removing is only allowed when the race is not busy.
+  if (isLocked()) {
+    setStatus("Uitleg geopend. Tijdens de race kun je de selectie niet aanpassen.");
+    return;
+  }
+  toggleAlgo(button.dataset.key);
+});
+
+algoSearch.addEventListener("input", () => {
+  searchTerm = algoSearch.value;
+  renderAlgoPicker();
+});
+
+addAllBtn.addEventListener("click", () => {
+  if (isLocked()) return;
+  selectedKeys = new Set(ALGO_LIBRARY.map((algo) => algo.key));
+  selectionChanged(`Alle ${ALGO_LIBRARY.length} algoritmes geselecteerd — dit wordt een lange race.`);
+});
+
+defaultBtn.addEventListener("click", () => {
+  if (isLocked()) return;
+  selectedKeys = new Set(DEFAULT_KEYS);
+  selectionChanged("De standaard vijf algoritmes zijn weer geselecteerd.");
+});
+
+clearBtn.addEventListener("click", () => {
+  if (isLocked()) return;
+  selectedKeys = new Set();
+  selectionChanged("Selectie leeggemaakt. Kies nieuwe algoritmes uit de zoeklijst.");
+});
+
+fitBtn.addEventListener("click", () => {
+  fitCanvas = !fitCanvas;
+  updateFitButton();
+});
+
+speedInput.addEventListener("input", () => {
+  speed = Number(speedInput.value);
+  speedOut.textContent = `${speed} ms`;
+});
+
+sizeInput.addEventListener("input", () => {
+  itemCount = Number(sizeInput.value);
+  sizeOut.textContent = String(itemCount);
+  reset();
+  setStatus(`New race with ${itemCount} items. Press Start.`);
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.code !== "Space") return;
+  const tag = (event.target.tagName || "").toLowerCase();
+  if (tag === "input" || tag === "button" || tag === "textarea" || tag === "select") return;
+  event.preventDefault();
+
+  if (phase === "running" || phase === "paused") togglePause();
+  else if (!isRecording) startRace();
+});
+
+window.addEventListener("error", (event) => {
+  const box = document.getElementById("err");
+  box.style.display = "block";
+  box.textContent = "JavaScript error: " + (event.message || event.error) + "\n" + (event.filename || "") + ":" + (event.lineno || "");
+});
+
+// =========================================================================
+// Boot
+// =========================================================================
+buildRobots();
+renderAlgoPicker();
+updateFitButton();
+updateUi();
+
+// handy for screenshots / testing: sorting-race-video.html?auto=1
+if (new URLSearchParams(location.search).get("auto") === "1") {
+  setTimeout(startRace, 300);
+}
+</script>
+</body>
+</html>
+
