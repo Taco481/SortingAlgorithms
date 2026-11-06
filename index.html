@@ -120,6 +120,14 @@
   }
   .info-note { margin: 9px 0 0; font-size: 11.5px; line-height: 1.5; color: #e0b95c; }
   .info-note:empty { display: none; }
+  .info-video {
+    display: inline-flex; align-items: center; gap: 7px; margin-top: 10px;
+    padding: 7px 13px; border-radius: 8px; text-decoration: none;
+    font: 600 12px "Segoe UI", Arial, sans-serif; color: #ffc2c2;
+    background: rgba(255, 60, 60, .13); border: 1px solid rgba(255, 90, 90, .45);
+  }
+  .info-video:hover { background: rgba(255, 60, 60, .22); border-color: rgba(255, 120, 120, .8); color: #ffe0e0; }
+  .info-video[hidden] { display: none; }
   .info-hint { margin: 8px 0 0; font-size: 11px; color: #6e7899; }
 </style>
 </head>
@@ -151,6 +159,7 @@
       <div class="info-cell"><span>Slechtste geval</span><b id="infoWorst">–</b></div>
       <div class="info-cell"><span>Extra ruimte</span><b id="infoSpace">–</b></div>
     </div>
+    <a id="infoVideo" class="info-video" href="#" target="_blank" rel="noopener noreferrer" hidden>▶ Uitlegvideo's op YouTube</a>
     <p id="infoNote" class="info-note"></p>
     <p id="infoHint" class="info-hint">Dezelfde klik voegt het algoritme toe of haalt het weg.</p>
   </div>
@@ -519,6 +528,61 @@ const ALGO_INFO = {
     best: "O(n)", avg: "O(n)", worst: "O(n)", space: "O(n)",
     note: "Vereenvoudigde weergave: in deze race zie je selection sort, die ook steeds het uiterste pakt.",
   },
+};
+
+// Elke uitleg krijgt een knop naar een YouTube-zoekopdracht met uitlegvideo's.
+// Key = dezelfde key als in ALGO_LIBRARY / ALGO_INFO.
+const ALGO_VIDEO = {
+  bubble: "https://www.youtube.com/results?search_query=Bubble+Sort",
+  selection: "https://www.youtube.com/results?search_query=Selection+Sort",
+  insertion: "https://www.youtube.com/results?search_query=Insertion+Sort",
+  merge: "https://www.youtube.com/results?search_query=Merge+Sort",
+  quick: "https://www.youtube.com/results?search_query=Quick+Sort",
+  heap: "https://www.youtube.com/results?search_query=Heap+Sort",
+  shell: "https://www.youtube.com/results?search_query=Shell+Sort",
+  counting: "https://www.youtube.com/results?search_query=Counting+Sort",
+  radix: "https://www.youtube.com/results?search_query=Radix+Sort",
+  bucket: "https://www.youtube.com/results?search_query=Bucket+Sort",
+  tim: "https://www.youtube.com/results?search_query=Tim+Sort",
+  intro: "https://www.youtube.com/results?search_query=IntroSort",
+  tree: "https://www.youtube.com/results?search_query=Tree+Sort",
+  cocktail: "https://www.youtube.com/results?search_query=Cocktail+Shaker+Sort",
+  comb: "https://www.youtube.com/results?search_query=Comb+Sort",
+  gnome: "https://www.youtube.com/results?search_query=Gnome+Sort",
+  oddEven: "https://www.youtube.com/results?search_query=Odd+Even+Sort",
+  strand: "https://www.youtube.com/results?search_query=Strand+Sort",
+  smooth: "https://www.youtube.com/results?search_query=Smoothsort",
+  library: "https://www.youtube.com/results?search_query=Library+Sort",
+  patience: "https://www.youtube.com/results?search_query=Patience+Sort",
+  pigeonhole: "https://www.youtube.com/results?search_query=Pigeonhole+Sort",
+  flash: "https://www.youtube.com/results?search_query=Flash+Sort",
+  americanFlag: "https://www.youtube.com/results?search_query=American+Flag+Sort",
+  bitonic: "https://www.youtube.com/results?search_query=Bitonic+Sort",
+  oddEvenMerge: "https://www.youtube.com/results?search_query=Odd+Even+Merge+Sort",
+  sample: "https://www.youtube.com/results?search_query=Sample+Sort",
+  parallelMerge: "https://www.youtube.com/results?search_query=Parallel+Merge+Sort",
+  parallelQuick: "https://www.youtube.com/results?search_query=Parallel+Quick+Sort",
+  network: "https://www.youtube.com/results?search_query=Sorting+Network",
+  boseNelson: "https://www.youtube.com/results?search_query=Bose+Nelson+Sort",
+  pancake: "https://www.youtube.com/results?search_query=Pancake+Sort",
+  cycle: "https://www.youtube.com/results?search_query=Cycle+Sort",
+  tournament: "https://www.youtube.com/results?search_query=Tournament+Sort",
+  weakHeap: "https://www.youtube.com/results?search_query=Weak+Heap+Sort",
+  cartesianTree: "https://www.youtube.com/results?search_query=Cartesian+Tree+Sort",
+  burstsort: "https://www.youtube.com/results?search_query=Burstsort",
+  grail: "https://www.youtube.com/results?search_query=GrailSort",
+  wiki: "https://www.youtube.com/results?search_query=WikiSort",
+  dualPivot: "https://www.youtube.com/results?search_query=Dual+Pivot+Quick+Sort",
+  externalMerge: "https://www.youtube.com/results?search_query=External+Merge+Sort",
+  polyphaseMerge: "https://www.youtube.com/results?search_query=Polyphase+Merge+Sort",
+  replacement: "https://www.youtube.com/results?search_query=Replacement+Selection+Sort",
+  bogo: "https://www.youtube.com/results?search_query=Bogo+Sort",
+  bozo: "https://www.youtube.com/results?search_query=Bozo+Sort",
+  stooge: "https://www.youtube.com/results?search_query=Stooge+Sort",
+  slow: "https://www.youtube.com/results?search_query=Slow+Sort",
+  sleep: "https://www.youtube.com/results?search_query=Sleep+Sort",
+  bead: "https://www.youtube.com/results?search_query=Bead+Sort",
+  spaghetti: "https://www.youtube.com/results?search_query=Spaghetti+Sort",
 };
 
 const DEFAULT_KEYS = ["bubble", "selection", "insertion", "merge", "quick"];
@@ -1991,6 +2055,7 @@ const infoAvg = document.getElementById("infoAvg");
 const infoWorst = document.getElementById("infoWorst");
 const infoSpace = document.getElementById("infoSpace");
 const infoNote = document.getElementById("infoNote");
+const infoVideo = document.getElementById("infoVideo");
 const infoHint = document.getElementById("infoHint");
 
 let searchTerm = "";
@@ -2020,6 +2085,11 @@ function showAlgoInfo(key) {
   infoWorst.textContent = info.worst;
   infoSpace.textContent = info.space;
   infoNote.textContent = info.note || "";
+
+  const videoUrl = ALGO_VIDEO[key] || "";
+  infoVideo.href = videoUrl || "#";
+  infoVideo.hidden = !videoUrl;
+
   infoHint.textContent = isLocked()
     ? "Tijdens de race kun je alleen lezen; selecteren kan weer zodra de race klaar is."
     : "Dezelfde klik voegt het algoritme toe of haalt het weg.";

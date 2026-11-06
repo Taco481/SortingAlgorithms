@@ -42,6 +42,8 @@ Eén klik doet dus twee dingen: het algoritme wordt **toegevoegd of weggehaald**
 - **hoe het algoritme werkt** in gewone taal;
 - **beste geval / gemiddeld / slechtste geval** (Big-O);
 - **extra ruimte** die het nodig heeft;
+- een **knop naar uitlegvideo's**: **▶ Uitlegvideo's op YouTube** opent een
+  YouTube-zoekopdracht voor dat algoritme in een nieuw tabblad;
 - een **gele notitie** als de animatie een vereenvoudigde variant gebruikt.
 
 Tijdens een race kun je nog steeds op elk algoritme klikken om de uitleg te lezen;
@@ -245,6 +247,25 @@ const ALGO_INFO = {
 De `key` moet **exact** overeenkomen met die in `ALGO_LIBRARY`. Voeg je een nieuw
 algoritme toe, zet er dan ook een blok in `ALGO_INFO` bij; zonder blok blijft het
 uitlegvak bij dat algoritme leeg. `note` mag je weglaten.
+
+### Link naar een uitlegvideo
+
+Onder de uitleg staat een knop **▶ Uitlegvideo's op YouTube**. De link per
+algoritme staat in `ALGO_VIDEO`:
+
+```js
+const ALGO_VIDEO = {
+  bubble: "https://www.youtube.com/results?search_query=Bubble+Sort",
+  // … één regel per key
+};
+```
+
+- Elk algoritme heeft een **YouTube-zoekopdracht**, zodat je meteen meerdere
+  filmpjes kunt kiezen in plaats van vast te zitten aan één video.
+- De link opent in een **nieuw tabblad**.
+- Laat je de regel weg, dan verdwijnt de knop bij dat algoritme.
+- Een eigen link (bijv. één specifieke video) mag ook:
+  `https://www.youtube.com/watch?v=…`.
 
 ### Kleuren
 
